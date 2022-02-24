@@ -6,7 +6,7 @@ from airflow.models import Variable
 def read_export_dag_vars(var_prefix, **kwargs):
     export_start_date = read_var('export_start_date', var_prefix, True, **kwargs)
     export_start_date = datetime.strptime(export_start_date, '%Y-%m-%d')
-    
+
     provider_uris = read_var('provider_uris', var_prefix, True, **kwargs)
     provider_uris = [uri.strip() for uri in provider_uris.split(',')]
 
@@ -80,12 +80,15 @@ def read_amend_dag_vars(var_prefix, **kwargs):
 
     return vars
 
+
 def read_parse_dag_vars(var_prefix, dataset, **kwargs):
     per_dataset_var_prefix = var_prefix + dataset + '_'
     vars = {
-        'parse_destination_dataset_project_id': read_var('parse_destination_dataset_project_id', var_prefix, True, **kwargs),
+        'parse_destination_dataset_project_id': read_var('parse_destination_dataset_project_id', var_prefix, True,
+                                                         **kwargs),
         'schedule_interval': read_var('schedule_interval', var_prefix, True, **kwargs),
-        'parse_all_partitions': parse_bool(read_var('parse_all_partitions', per_dataset_var_prefix, False), default=None),
+        'parse_all_partitions': parse_bool(read_var('parse_all_partitions', per_dataset_var_prefix, False),
+                                           default=None),
         'notification_emails': read_var('notification_emails', None, False, **kwargs),
     }
 
@@ -114,11 +117,28 @@ def read_load_dag_redshift_vars(var_prefix, **kwargs):
     return vars
 
 
+def read_load_dag_spark_vars(var_prefix, **kwargs):
+    vars = {
+        'output_bucket': read_var('output_bucket', var_prefix, True, **kwargs),
+        'notification_emails': read_var('notification_emails', None, False, **kwargs),
+        'schedule_interval': read_var('schedule_interval', var_prefix, True, **kwargs),
+    }
+
+    load_start_date = read_var('load_start_date', vars, False, **kwargs)
+    if load_start_date is not None:
+        load_start_date = datetime.strptime(load_start_date, '%Y-%m-%d')
+        vars['load_start_date'] = load_start_date
+
+    return vars
+
+
 def read_verify_streaming_dag_vars(var_prefix, **kwargs):
     vars = {
         'destination_dataset_project_id': read_var('destination_dataset_project_id', var_prefix, True, **kwargs),
-        'parse_destination_dataset_project_id': read_var('parse_destination_dataset_project_id', var_prefix, True, **kwargs),
-        'verify_partitioned_tables': parse_bool(read_var('verify_partitioned_tables', var_prefix, False, **kwargs), default=False),
+        'parse_destination_dataset_project_id': read_var('parse_destination_dataset_project_id', var_prefix, True,
+                                                         **kwargs),
+        'verify_partitioned_tables': parse_bool(read_var('verify_partitioned_tables', var_prefix, False, **kwargs),
+                                                default=False),
         'notification_emails': read_var('notification_emails', None, False, **kwargs),
     }
 

@@ -1,0 +1,1 @@
+MSCK REPAIR TABLE {{params.database}}.{{params.table}};
