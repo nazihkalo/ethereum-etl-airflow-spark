@@ -118,10 +118,21 @@ def read_load_dag_redshift_vars(var_prefix, **kwargs):
 
 
 def read_load_dag_spark_vars(var_prefix, **kwargs):
+    spark_prefix = var_prefix + 'spark_'
+    spark_conf = {
+        'spark.kubernetes.namespace': read_var('k8s_namespace', spark_prefix, True, **kwargs),
+        'spark.kubernetes.authenticate.driver.serviceAccountName': read_var('driver_service_account_name', spark_prefix,
+                                                                            True, **kwargs),
+        'spark.kubernetes.container.image': read_var('image', spark_prefix, True, **kwargs),
+        'spark.hive.metastore.uris': read_var('metastore_uris', spark_prefix, True, **kwargs),
+        'spark.sql.catalogImplementation': 'hive'
+    }
+
     vars = {
         'output_bucket': read_var('output_bucket', var_prefix, True, **kwargs),
         'notification_emails': read_var('notification_emails', None, False, **kwargs),
         'schedule_interval': read_var('schedule_interval', var_prefix, True, **kwargs),
+        'spark_conf': spark_conf
     }
 
     load_start_date = read_var('load_start_date', vars, False, **kwargs)

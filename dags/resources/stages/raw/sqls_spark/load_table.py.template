@@ -1,0 +1,13 @@
+import pyspark
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+spark = SparkSession.builder \
+    .master("yarn") \
+    .getOrCreate()
+
+spark.sql("""
+    {{params.sql}}
+""")
+
+spark.sql(MSCK REPAIR TABLE {{params.database}}.{{params.table}};)

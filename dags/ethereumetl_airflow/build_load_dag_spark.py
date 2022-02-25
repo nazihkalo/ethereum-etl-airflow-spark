@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timedelta
 
 from airflow import models
-from airflow.contrib.operators.spark_sql_operator import SparkSqlOperator
+from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
 from airflow.sensors.s3_key_sensor import S3KeySensor
 
 logging.basicConfig()
@@ -15,6 +15,7 @@ def build_load_dag_spark(
         output_bucket,
         chain='ethereum',
         notification_emails=None,
+        spark_conf=None,
         load_start_date=datetime(2018, 7, 1),
         schedule_interval='0 0 * * *',
         load_all_partitions=True
@@ -27,6 +28,9 @@ def build_load_dag_spark(
     dataset_name = f'{chain}'
     dataset_name_raw = f'{chain}_raw'
     dataset_name_temp = f'{chain}_temp'
+
+    if not spark_conf:
+        raise ValueError('k8s_config is required')
 
     environment = {
         'dataset_name': dataset_name,
@@ -44,7 +48,7 @@ def build_load_dag_spark(
         template_replaced = template
         for key, value in context.items():
             template_replaced = template_replaced.replace('{{params.' + key + '}}', value)
-        return template
+        return template_replaced
 
     default_dag_args = {
         'depends_on_past': False,
@@ -67,15 +71,18 @@ def build_load_dag_spark(
     )
 
     dags_folder = os.environ.get('DAGS_FOLDER', '/opt/airflow/dags/repo/dags')
+    temp_folder = '/tmp'
 
     def add_load_tasks(task, file_format):
+        bucket_file_key = 'export/{task}/block_date={datestamp}/{task}.{file_format}'.format(
+            task=task, datestamp='{{ds}}', file_format=file_format
+        )
+
         wait_sensor = S3KeySensor(
             task_id='wait_latest_{task}'.format(task=task),
             timeout=60 * 60,
             poke_interval=60,
-            bucket_key='export/{task}/block_date={datestamp}/{task}.{file_format}'.format(
-                task=task, datestamp='{{ds}}', file_format=file_format
-            ),
+            bucket_key=bucket_file_key,
             bucket_name=output_bucket,
             dag=dag
         )
@@ -84,33 +91,35 @@ def build_load_dag_spark(
         sql_template = read_file(sql_path)
         sql = render_template(sql_template, {
             'database': dataset_name_temp,
-            'file_path': 'export/{task}/block_date={datestamp}/{task}.{file_format}'
+            'file_path': 's3a://{bucket}/{bucket_name}'.format(bucket=output_bucket, bucket_name=bucket_file_key)
         })
-        print('Load sql:')
-        print(sql)
 
-        load_operator = SparkSqlOperator(
-            task_id='load_{task}'.format(task=task),
-            dag=dag,
-            sql=sql
-        )
-
-        msck_sql_path = os.path.join(dags_folder, 'resources/stages/raw/sqls_spark/msck.sql')
-        msck_sql_template = read_file(msck_sql_path)
-        msck_sql = render_template(msck_sql_template, {
+        pyspark_path = os.path.join(temp_folder, '{task}.py'.format(task=task))
+        pyspark_template_path = os.path.join(dags_folder, 'resources/stages/raw/sqls_spark/load_table.py.template')
+        pyspark_template = read_file(pyspark_template_path)
+        pyspark = render_template(pyspark_template, {
+            'sql': sql,
             'database': dataset_name_temp,
             'table': task
         })
-        print('MSCK sql:')
-        print(sql)
+        print('Load pyspark:')
+        print(pyspark)
 
-        msck_operator = SparkSqlOperator(
-            task_id='msck_{task}'.format(task=task),
+        with open(pyspark_path, 'w') as f:
+            f.write(pyspark)
+
+        load_operator = SparkSubmitOperator(
+            task_id='load_{task}'.format(task=task),
             dag=dag,
-            sql=msck_sql
+            name='load_{task}'.format(task=task),
+            conf=spark_conf,
+            py_files=pyspark_path
         )
 
-        wait_sensor >> load_operator >> msck_operator
+        if os.path.isfile(pyspark_path):
+            os.remove(pyspark_path)
+
+        wait_sensor >> load_operator
 
     # Load tasks #
 
