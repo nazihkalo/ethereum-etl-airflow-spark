@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{params.database}}.receipts
+CREATE TABLE IF NOT EXISTS {{database}}.receipts
 (
     transaction_hash    STRING,
     transaction_index   BIGINT,
@@ -12,6 +12,6 @@ CREATE TABLE IF NOT EXISTS {{params.database}}.receipts
     effective_gas_price BIGINT
 ) USING json
 OPTIONS (
-    path "{{params.file_path}}"
+    path "{{file_path}}"
 )
 PARTITIONED BY (block_date STRING);

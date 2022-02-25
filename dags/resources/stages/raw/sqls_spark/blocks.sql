@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{params.database}}.blocks
+CREATE TABLE IF NOT EXISTS {{database}}.blocks
 (
     number            BIGINT,
     hash              STRING,
@@ -21,6 +21,6 @@ CREATE TABLE IF NOT EXISTS {{params.database}}.blocks
     base_fee_per_gas  BIGINT
 ) USING json
 OPTIONS (
-    path "{{params.file_path}}"
+    path "{{file_path}}"
 )
 PARTITIONED BY (block_date STRING);

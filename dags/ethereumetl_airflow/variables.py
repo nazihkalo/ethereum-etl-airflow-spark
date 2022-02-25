@@ -118,6 +118,8 @@ def read_load_dag_redshift_vars(var_prefix, **kwargs):
 
 
 def read_load_dag_spark_vars(var_prefix, **kwargs):
+    output_bucket = read_var('output_bucket', var_prefix, True, **kwargs)
+
     spark_prefix = var_prefix + 'spark_'
     spark_conf = {
         'spark.kubernetes.namespace': read_var('k8s_namespace', spark_prefix, True, **kwargs),
@@ -125,11 +127,16 @@ def read_load_dag_spark_vars(var_prefix, **kwargs):
                                                                             True, **kwargs),
         'spark.kubernetes.container.image': read_var('image', spark_prefix, True, **kwargs),
         'spark.hive.metastore.uris': read_var('metastore_uris', spark_prefix, True, **kwargs),
-        'spark.sql.catalogImplementation': 'hive'
+        'spark.sql.catalogImplementation': 'hive',
+        'spark.kubernetes.file.upload.path': "s3a://{bucket}/airflow/spark-application".format(bucket=output_bucket),
+        "spark.hadoop.fs.s3a.access.key": read_var('s3a_access_key', spark_prefix, True, **kwargs),
+        "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
+        "spark.hadoop.fs.s3a.fast.upload": True,
+        "spark.hadoop.fs.s3a.secret.key": read_var('s3a_secret_key', spark_prefix, True, **kwargs)
     }
 
     vars = {
-        'output_bucket': read_var('output_bucket', var_prefix, True, **kwargs),
+        'output_bucket': output_bucket,
         'notification_emails': read_var('notification_emails', None, False, **kwargs),
         'schedule_interval': read_var('schedule_interval', var_prefix, True, **kwargs),
         'spark_conf': spark_conf

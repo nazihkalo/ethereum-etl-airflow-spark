@@ -2,12 +2,10 @@ import pyspark
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 
-spark = SparkSession.builder \
-    .master("yarn") \
-    .getOrCreate()
+spark = SparkSession.builder.getOrCreate()
 
 spark.sql("""
-    {{params.sql}}
+    {{sql}}
 """)
 
-spark.sql(MSCK REPAIR TABLE {{params.database}}.{{params.table}};)
+spark.sql("MSCK REPAIR TABLE {{database}}.{{table}};")

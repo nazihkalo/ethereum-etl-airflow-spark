@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{params.database}}.tokens
+CREATE TABLE IF NOT EXISTS {{database}}.tokens
 (
     address      STRING,
     symbol       STRING,
@@ -8,6 +8,6 @@ CREATE TABLE IF NOT EXISTS {{params.database}}.tokens
     block_number BIGINT
 ) USING json
 OPTIONS (
-    path "{{params.file_path}}"
+    path "{{file_path}}"
 )
 PARTITIONED BY (block_date STRING);

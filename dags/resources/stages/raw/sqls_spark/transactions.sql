@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{params.database}}.transactions
+CREATE TABLE IF NOT EXISTS {{database}}.transactions
 (
     hash                     STRING,
     nonce                    BIGINT,
@@ -16,6 +16,6 @@ CREATE TABLE IF NOT EXISTS {{params.database}}.transactions
     transaction_type         BIGINT
 ) USING json
 OPTIONS (
-    path "{{params.file_path}}"
+    path "{{file_path}}"
 )
 PARTITIONED BY (block_date STRING);
