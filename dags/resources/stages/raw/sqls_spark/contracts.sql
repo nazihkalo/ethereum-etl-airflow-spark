@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{database}}.contracts
+CREATE TABLE IF NOT EXISTS {{database}}.{{table}}
 (
     address            STRING,
     bytecode           STRING,
@@ -9,5 +9,4 @@ CREATE TABLE IF NOT EXISTS {{database}}.contracts
 ) USING json
 OPTIONS (
     path "{{file_path}}"
-)
-PARTITIONED BY (block_date STRING);
+);

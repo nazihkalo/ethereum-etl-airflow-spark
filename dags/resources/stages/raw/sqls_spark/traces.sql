@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{database}}.traces
+CREATE TABLE IF NOT EXISTS {{database}}.{{table}}
 (
     block_number      BIGINT,
     transaction_hash  STRING,
@@ -21,5 +21,4 @@ CREATE TABLE IF NOT EXISTS {{database}}.traces
 ) USING json
 OPTIONS (
     path "{{file_path}}"
-)
-PARTITIONED BY (block_date STRING);
+);

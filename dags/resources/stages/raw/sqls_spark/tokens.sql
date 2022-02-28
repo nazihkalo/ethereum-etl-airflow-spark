@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{database}}.tokens
+CREATE TABLE IF NOT EXISTS {{database}}.{{table}}
 (
     address      STRING,
     symbol       STRING,
@@ -9,5 +9,4 @@ CREATE TABLE IF NOT EXISTS {{database}}.tokens
 ) USING json
 OPTIONS (
     path "{{file_path}}"
-)
-PARTITIONED BY (block_date STRING);
+);

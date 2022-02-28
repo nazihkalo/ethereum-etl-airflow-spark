@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{database}}.token_transfers
+CREATE TABLE IF NOT EXISTS {{database}}.{{table}}
 (
     token_address    STRING,
     from_address     STRING,
@@ -10,5 +10,4 @@ CREATE TABLE IF NOT EXISTS {{database}}.token_transfers
 ) USING json
 OPTIONS (
     path "{{file_path}}"
-)
-PARTITIONED BY (block_date STRING);
+);

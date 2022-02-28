@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 
 from airflow import models
 from airflow.sensors.s3_key_sensor import S3KeySensor
-from ethereumetl_airflow.operators.spark_submit_with_template_operator import SparkSubmitWithTemplateOperator
+from ethereumetl_airflow.operators.spark_submit_enrich_operator import SparkSubmitEnrichOperator
+from ethereumetl_airflow.operators.spark_submit_load_operator import SparkSubmitLoadOperator
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
@@ -26,15 +27,13 @@ def build_load_dag_spark(
     # - crypto_{chain}
 
     dataset_name = f'{chain}'
-    dataset_name_raw = f'{chain}_raw'
-    dataset_name_temp = f'{chain}_temp'
+    dataset_name_temp = f'{chain}_raw'
 
     if not spark_conf:
         raise ValueError('k8s_config is required')
 
     environment = {
         'dataset_name': dataset_name,
-        'dataset_name_raw': dataset_name_raw,
         'dataset_name_temp': dataset_name_temp,
         'load_all_partitions': load_all_partitions
     }
@@ -76,7 +75,7 @@ def build_load_dag_spark(
             dag=dag
         )
 
-        load_operator = SparkSubmitWithTemplateOperator(
+        load_operator = SparkSubmitLoadOperator(
             task_id='load_{task}'.format(task=task),
             dag=dag,
             name='load_{task}'.format(task=task),
@@ -85,27 +84,57 @@ def build_load_dag_spark(
                 'task': task,
                 'bucket': output_bucket,
                 'database': dataset_name_temp,
+                'operator_type': 'load',
                 'file_format': file_format,
                 'sql_template_path': os.path.join(
                     dags_folder,
                     'resources/stages/raw/sqls_spark/{task}.sql'.format(task=task)),
                 'pyspark_template_path': os.path.join(
                     dags_folder,
-                    'resources/stages/raw/sqls_spark/load_table.py.template')
+                    'resources/stages/spark/load_table.py.template')
             }
         )
 
         wait_sensor >> load_operator
+        return load_operator
+
+    def add_enrich_tasks(task, dependencies=None):
+        enrich_operator = SparkSubmitEnrichOperator(
+            task_id='enrich_{task}'.format(task=task),
+            dag=dag,
+            name='enrich_{task}'.format(task=task),
+            conf=spark_conf,
+            template_conf={
+                'task': task,
+                'database': dataset_name,
+                'operator_type': 'enrich',
+                'database_temp': dataset_name_temp,
+                'sql_template_path': os.path.join(
+                    dags_folder,
+                    'resources/stages/enrich/sqls/spark/{task}.sql'.format(task=task)),
+                'pyspark_template_path': os.path.join(
+                    dags_folder,
+                    'resources/stages/spark/load_table.py.template')
+            }
+        )
+
+        if dependencies is not None and len(dependencies) > 0:
+            for dependency in dependencies:
+                dependency >> enrich_operator
+        return enrich_operator
 
     # Load tasks #
-
     load_blocks_task = add_load_tasks('blocks', 'json')
     # load_transactions_task = add_load_tasks('transactions', 'json')
     # load_receipts_task = add_load_tasks('receipts', 'json')
-    # load_logs_task = add_load_tasks('logs', 'json')
+    load_logs_task = add_load_tasks('logs', 'json')
     # load_contracts_task = add_load_tasks('contracts', 'json')
     # load_tokens_task = add_load_tasks('tokens', 'json')
     # load_token_transfers_task = add_load_tasks('token_transfers', 'json')
     # load_traces_task = add_load_tasks('traces', 'json')
+
+    # Enrich tasks #
+    enrich_blocks_task = add_enrich_tasks('blocks', dependencies=[load_blocks_task])
+    enrich_logs_task = add_enrich_tasks('logs', dependencies=[load_blocks_task, load_logs_task])
 
     return dag

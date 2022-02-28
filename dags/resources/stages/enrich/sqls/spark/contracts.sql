@@ -1,6 +1,6 @@
-INSERT OVERWRITE TABLE {{params.database}}.contracts
-PARTITION(dt = {{ds}})
-AS SELECT
+INSERT OVERWRITE TABLE {{database}}.contracts
+PARTITION(dt = '{{ds}}')
+SELECT
     contracts.address,
     contracts.bytecode,
     contracts.function_sighashes,
@@ -9,5 +9,5 @@ AS SELECT
     TIMESTAMP_SECONDS(blocks.timestamp) AS block_timestamp,
     blocks.number AS block_number,
     blocks.hash AS block_hash
-FROM {{params.database_temp}}.contracts AS contracts
-    JOIN {{params.database_temp}}.blocks AS blocks ON contracts.block_number = blocks.number
+FROM {{database_temp}}.contracts_{{ds_in_table}} AS contracts
+    JOIN {{database_temp}}.blocks_{{ds_in_table}} AS blocks ON contracts.block_number = blocks.number

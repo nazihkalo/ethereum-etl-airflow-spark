@@ -1,6 +1,6 @@
-INSERT OVERWRITE TABLE {{params.database}}.blocks
-PARTITION(dt = {{ds}})
-AS SELECT
+INSERT OVERWRITE TABLE {{database}}.blocks
+PARTITION(dt = '{{ds}}')
+SELECT
     TIMESTAMP_SECONDS(blocks.timestamp) AS timestamp,
     blocks.number,
     blocks.hash,
@@ -20,4 +20,4 @@ AS SELECT
     blocks.gas_used,
     blocks.transaction_count,
     blocks.base_fee_per_gas
-FROM {{params.database_temp}}.blocks AS blocks
+FROM {{database_temp}}.blocks_{{ds_in_table}} AS blocks

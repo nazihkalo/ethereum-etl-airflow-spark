@@ -7,5 +7,3 @@ spark = SparkSession.builder.getOrCreate()
 spark.sql("""
     {{sql}}
 """)
-
-spark.sql("MSCK REPAIR TABLE {{database}}.{{table}};")

@@ -6,7 +6,7 @@ from airflow.utils.decorators import apply_defaults
 from ethereumetl_airflow.operators.new_spark_submit_hook import NewSparkSubmitHook
 
 
-class SparkSubmitWithTemplateOperator(BaseOperator):
+class SparkSubmitOperator(BaseOperator):
     """
         This hook is a wrapper around the spark-submit binary to kick off a spark-submit job.
         It requires that the "spark-submit" binary is in the PATH or the spark-home is set
@@ -97,7 +97,7 @@ class SparkSubmitWithTemplateOperator(BaseOperator):
                  template_conf=None,
                  *args,
                  **kwargs):
-        super(SparkSubmitWithTemplateOperator, self).__init__(*args, **kwargs)
+        super(SparkSubmitOperator, self).__init__(*args, **kwargs)
         self._conf = conf
         self._files = files
         self._archives = archives
@@ -129,37 +129,29 @@ class SparkSubmitWithTemplateOperator(BaseOperator):
             content = file_handle.read()
             return content
 
-    def execute(self, context):
+    def _render_sql(self, context):
+        raise Exception('The function must should be override.')
+
+    def _render_pyspark(self, sql):
         _task = self._template_conf['task']
-        _bucket = self._template_conf['bucket']
         _database = self._template_conf['database']
-        _file_format = self._template_conf['file_format']
-        _sql_template_path = self._template_conf['sql_template_path']
         _pyspark_template_path = self._template_conf['pyspark_template_path']
 
-        sql_template = self.read_file(_sql_template_path)
-        sql = self.render_template(sql_template, {
-            'database': _database,
-            'file_path': 's3a://{bucket}/{bucket_name}'.format(
-                bucket=_bucket,
-                bucket_name='export/{task}/block_date={datestamp}/{task}.{file_format}'.format(
-                    task=_task, datestamp=context['ds'], file_format=_file_format
-                )
-            )
-        })
-
-        pyspark_path = os.path.join('/tmp', '{task}.py'.format(task=_task))
+        operator_type = self._template_conf['operator_type']
+        pyspark_path = os.path.join('/tmp', '{task}_{operator_type}.py'.format(task=_task, operator_type=operator_type))
         pyspark_template = self.read_file(_pyspark_template_path)
-        pyspark = self.render_template(pyspark_template, {
-            'sql': sql,
-            'database': _database,
-            'table': _task
-        })
+        pyspark = self.render_template(pyspark_template, {'sql': sql})
         print('Load pyspark:')
         print(pyspark)
 
         with open(pyspark_path, 'w') as f:
             f.write(pyspark)
+
+        return 'file://' + pyspark_path
+
+    def execute(self, context):
+        sql = self._render_sql(context)
+        pyspark_path = self._render_pyspark(sql)
 
         """
             Call the SparkSubmitHook to run the provided spark job
@@ -188,7 +180,7 @@ class SparkSubmitWithTemplateOperator(BaseOperator):
             verbose=self._verbose,
             spark_binary=self._spark_binary
         )
-        self._hook.submit('file://' + pyspark_path)
+        self._hook.submit(pyspark_path)
 
         """
             Clean temp environment

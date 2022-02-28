@@ -1,6 +1,6 @@
-INSERT OVERWRITE TABLE {{params.database}}.traces
-PARTITION(dt = {{ds}})
-AS SELECT
+INSERT OVERWRITE TABLE {{database}}.traces
+PARTITION(dt = '{{ds}}')
+SELECT
     traces.transaction_hash,
     traces.transaction_index,
     traces.from_address,
@@ -21,5 +21,5 @@ AS SELECT
     TIMESTAMP_SECONDS(blocks.timestamp) AS block_timestamp,
     blocks.number AS block_number,
     blocks.hash AS block_hash
-FROM {{params.database_temp}}.blocks AS blocks
-    JOIN {{params.database_temp}}.traces AS traces ON blocks.number = traces.block_number
+FROM {{database_temp}}.blocks_{{ds_in_table}} AS blocks
+    JOIN {{database_temp}}.traces_{{ds_in_table}} AS traces ON blocks.number = traces.block_number

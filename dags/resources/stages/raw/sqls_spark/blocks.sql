@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{database}}.blocks
+CREATE TABLE IF NOT EXISTS {{database}}.{{table}}
 (
     number            BIGINT,
     hash              STRING,
@@ -22,5 +22,4 @@ CREATE TABLE IF NOT EXISTS {{database}}.blocks
 ) USING json
 OPTIONS (
     path "{{file_path}}"
-)
-PARTITIONED BY (block_date STRING);
+);
