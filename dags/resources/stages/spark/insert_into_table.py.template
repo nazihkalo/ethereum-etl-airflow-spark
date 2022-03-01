@@ -8,7 +8,8 @@ df = spark.sql("""
     {{sql}}
 """)
 
-df.coalesce(1) \
+
+df.repartition(1) \
     .write \
-    .mode("overwrite") \
+    .mode("{{write_mode}}") \
     .insertInto("{{database}}.{{table}}")

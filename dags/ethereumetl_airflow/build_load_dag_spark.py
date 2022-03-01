@@ -21,7 +21,6 @@ def build_load_dag_spark(
         spark_conf=None,
         load_start_date=datetime(2018, 7, 1),
         schedule_interval='0 0 * * *',
-        load_all_partitions=True
 ):
     # The following datasets must be created in Spark:
     # - crypto_{chain}_raw
@@ -94,7 +93,7 @@ def build_load_dag_spark(
         wait_sensor >> load_operator
         return load_operator
 
-    def add_enrich_tasks(task, dependencies=None):
+    def add_enrich_tasks(task, write_mode='overwrite', dependencies=None):
         enrich_operator = SparkSubmitEnrichOperator(
             task_id='enrich_{task}'.format(task=task),
             dag=dag,
@@ -103,6 +102,7 @@ def build_load_dag_spark(
             template_conf={
                 'task': task,
                 'database': dataset_name,
+                'write_mode': write_mode,
                 'operator_type': 'enrich',
                 'database_temp': dataset_name_temp,
                 'sql_template_path': os.path.join(
@@ -164,23 +164,23 @@ def build_load_dag_spark(
     load_token_transfers_task = add_load_tasks('token_transfers', 'json')
     load_traces_task = add_load_tasks('traces', 'json')
     load_contracts_task = add_load_tasks('contracts', 'json')
-    # load_tokens_task = add_load_tasks('tokens', 'json')
+    load_tokens_task = add_load_tasks('tokens', 'json')
 
     # Enrich tasks #
     enrich_blocks_task = add_enrich_tasks(
-        'blocks', dependencies=[load_blocks_task])
+        'blocks', 'overwrite', dependencies=[load_blocks_task])
     enrich_transactions_task = add_enrich_tasks(
-        'transactions', dependencies=[load_blocks_task, load_transactions_task, load_receipts_task])
+        'transactions', 'overwrite', dependencies=[load_blocks_task, load_transactions_task, load_receipts_task])
     enrich_logs_task = add_enrich_tasks(
-        'logs', dependencies=[load_blocks_task, load_logs_task])
+        'logs', 'overwrite', dependencies=[load_blocks_task, load_logs_task])
     enrich_token_transfers_task = add_enrich_tasks(
-        'token_transfers', dependencies=[load_blocks_task, load_token_transfers_task])
+        'token_transfers', 'overwrite', dependencies=[load_blocks_task, load_token_transfers_task])
     enrich_traces_task = add_enrich_tasks(
-        'traces', dependencies=[load_blocks_task, load_traces_task])
+        'traces', 'overwrite', dependencies=[load_blocks_task, load_traces_task])
     enrich_contracts_task = add_enrich_tasks(
-        'contracts', dependencies=[load_blocks_task, load_contracts_task])
-    # enrich_tokens_task = add_enrich_tasks(
-    #     'tokens', dependencies=[load_tokens_task])
+        'contracts', 'overwrite', dependencies=[load_blocks_task, load_contracts_task])
+    enrich_tokens_task = add_enrich_tasks(
+        'tokens', 'append', dependencies=[load_tokens_task])
 
     # Clean tasks #
     add_clean_tasks('blocks', 'json', dependencies=[
@@ -196,7 +196,7 @@ def build_load_dag_spark(
     add_clean_tasks('token_transfers', 'json', dependencies=[enrich_token_transfers_task])
     add_clean_tasks('traces', 'json', dependencies=[enrich_traces_task])
     add_clean_tasks('contracts', 'json', dependencies=[enrich_contracts_task])
-    # add_clean_tasks('tokens', 'json', True, dependencies=[enrich_tokens_task])
+    add_clean_tasks('tokens', 'json', dependencies=[enrich_tokens_task])
     add_clean_tasks('receipts', 'json', dependencies=[enrich_transactions_task])
 
     return dag

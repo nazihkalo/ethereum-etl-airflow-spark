@@ -20,7 +20,9 @@ class SparkSubmitCleanOperator(SparkSubmitOperator):
         })
 
         operator_type = self._template_conf['operator_type']
-        pyspark_path = os.path.join('/tmp', '{task}_{operator_type}.py'.format(task=_task, operator_type=operator_type))
+        pyspark_path = os.path.join(
+            '/tmp',
+            '{task}_{operator_type}_{ds}.py'.format(task=_task, operator_type=operator_type, ds=context['ds']))
         pyspark_template = self.read_file(_pyspark_template_path)
         pyspark = self.render_template(pyspark_template, {'sql': sql})
         print('Load pyspark:')

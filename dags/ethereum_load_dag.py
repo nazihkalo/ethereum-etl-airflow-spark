@@ -5,7 +5,7 @@ from ethereumetl_airflow.variables import read_load_dag_spark_vars
 
 # airflow DAG
 DAG = build_load_dag_spark(
-    dag_id='ethereum_load_dag_test',
+    dag_id='ethereum_load_dag',
     chain='ethereum',
     **read_load_dag_spark_vars(
         var_prefix='ethereum_',

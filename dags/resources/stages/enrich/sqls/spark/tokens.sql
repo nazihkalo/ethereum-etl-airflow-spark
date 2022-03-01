@@ -1,4 +1,3 @@
-INSERT INTO TABLE {{database}}.tokens
 SELECT
     tokens.address,
     tokens.symbol,
