@@ -110,7 +110,7 @@ def build_load_dag_spark(
                     'resources/stages/enrich/sqls/spark/{task}.sql'.format(task=task)),
                 'pyspark_template_path': os.path.join(
                     dags_folder,
-                    'resources/stages/spark/spark_sql.py.template')
+                    'resources/stages/spark/insert_into_table.py.template')
             }
         )
 
@@ -162,7 +162,7 @@ def build_load_dag_spark(
     load_token_transfers_task = add_load_tasks('token_transfers', 'json')
     load_traces_task = add_load_tasks('traces', 'json')
     load_contracts_task = add_load_tasks('contracts', 'json')
-    load_tokens_task = add_load_tasks('tokens', 'json')
+    # load_tokens_task = add_load_tasks('tokens', 'json')
 
     # Enrich tasks #
     enrich_blocks_task = add_enrich_tasks(
@@ -177,8 +177,8 @@ def build_load_dag_spark(
         'traces', dependencies=[load_blocks_task, load_traces_task])
     enrich_contracts_task = add_enrich_tasks(
         'contracts', dependencies=[load_blocks_task, load_contracts_task])
-    enrich_tokens_task = add_enrich_tasks(
-        'tokens', dependencies=[load_tokens_task])
+    # enrich_tokens_task = add_enrich_tasks(
+    #     'tokens', dependencies=[load_tokens_task])
 
     # Clean tasks #
     add_clean_tasks('blocks', 'json', True, dependencies=[enrich_blocks_task])
@@ -187,7 +187,7 @@ def build_load_dag_spark(
     add_clean_tasks('token_transfers', 'json', True, dependencies=[enrich_token_transfers_task])
     add_clean_tasks('traces', 'json', True, dependencies=[enrich_traces_task])
     add_clean_tasks('contracts', 'json', True, dependencies=[enrich_contracts_task])
-    add_clean_tasks('tokens', 'json', True, dependencies=[enrich_tokens_task])
+    # add_clean_tasks('tokens', 'json', True, dependencies=[enrich_tokens_task])
     add_clean_tasks('receipts', 'json', False, dependencies=[load_receipts_task])
 
     return dag

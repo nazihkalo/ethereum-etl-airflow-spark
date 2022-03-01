@@ -1,0 +1,14 @@
+import pyspark
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+spark = SparkSession.builder.getOrCreate()
+
+df = spark.sql("""
+    {{sql}}
+""")
+
+df.coalesce(1) \
+    .write \
+    .mode("overwrite") \
+    .insertInto("{{database}}.{{table}}")

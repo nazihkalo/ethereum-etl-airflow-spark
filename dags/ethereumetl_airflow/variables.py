@@ -126,9 +126,11 @@ def read_load_dag_spark_vars(var_prefix, **kwargs):
         'spark.kubernetes.authenticate.driver.serviceAccountName': read_var('driver_service_account_name', spark_prefix,
                                                                             True, **kwargs),
         'spark.kubernetes.container.image': read_var('image', spark_prefix, True, **kwargs),
+        'spark.kubernetes.file.upload.path': "s3a://{bucket}/airflow/spark-application".format(bucket=output_bucket),
         'spark.hive.metastore.uris': read_var('metastore_uris', spark_prefix, True, **kwargs),
         'spark.sql.catalogImplementation': 'hive',
-        'spark.kubernetes.file.upload.path': "s3a://{bucket}/airflow/spark-application".format(bucket=output_bucket),
+        # https://stackoverflow.com/questions/50006526/overwrite-only-some-partitions-in-a-partitioned-spark-dataset
+        "spark.sql.sources.partitionOverwriteMode": "dynamic",
         "spark.hadoop.fs.s3a.access.key": read_var('s3a_access_key', spark_prefix, True, **kwargs),
         "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
         "spark.hadoop.fs.s3a.fast.upload": True,
