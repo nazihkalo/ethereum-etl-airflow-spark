@@ -114,7 +114,7 @@ def build_load_dag_spark(
                     'resources/stages/enrich/sqls/spark/{task}.sql'.format(task=task)),
                 'pyspark_template_path': os.path.join(
                     dags_folder,
-                    'resources/stages/spark/load_table.py.template')
+                    'resources/stages/spark/insert_into_table.py.template')
             }
         )
 
