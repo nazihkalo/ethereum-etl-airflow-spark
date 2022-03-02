@@ -10,6 +10,6 @@ DAG = build_load_dag_spark(
     **read_load_dag_spark_vars(
         var_prefix='ethereum_',
         load_start_date='2022-02-11',
-        schedule_interval='30 1 * * *'
+        schedule_interval='30 13 * * *'
     )
 )

@@ -129,8 +129,34 @@ class SparkSubmitOperator(BaseOperator):
             content = file_handle.read()
             return content
 
-    def _render_pyspark(self, context):
+    def _get_sql_render_content(self, context):
         raise Exception('The function must should be override.')
+
+    def _get_pyspark_render_content(self, context):
+        raise Exception('The function must should be override.')
+
+    def _render_pyspark(self, context):
+        sql_template = self.read_file(self._template_conf['sql_template_path'])
+        sql = self.render_template(sql_template, self._get_sql_render_content(context))
+
+        pyspark_path = os.path.join('/tmp', '{task}_{operator_type}_{ds}.py'.format(
+            task=self._template_conf['task'],
+            operator_type=self._template_conf['operator_type'],
+            ds=context['ds']
+        ))
+        pyspark_template = self.read_file(self._template_conf['pyspark_template_path'])
+        pyspark = self.render_template(pyspark_template, {
+            'sql': sql,
+            **self._get_pyspark_render_content(context)
+        })
+
+        print('Load pyspark:')
+        print(pyspark)
+
+        with open(pyspark_path, 'w') as f:
+            f.write(pyspark)
+
+        return 'file://' + pyspark_path
 
     def execute(self, context):
         pyspark_path = self._render_pyspark(context)
