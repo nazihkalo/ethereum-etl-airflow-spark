@@ -19,6 +19,11 @@ SELECT
     TIMESTAMP_SECONDS(blocks.timestamp) AS block_timestamp,
     blocks.number AS block_number,
     blocks.hash AS block_hash,
-    TO_DATE('{{ds}}') as dt
+    substr(input, 1, 10) as selector,
+    unhex(substr(input, 3)) as unhex_input,
+    unhex(substr(output, 3)) as unhex_output,
+    TO_DATE('{{ds}}') as dt,
+    abs(hash(to_address)) % 10 as address_hash,
+    abs(hash(substr(input, 1, 10))) % 10 as selector_hash
 FROM {{database_temp}}.blocks_{{ds_in_table}} AS blocks
     JOIN {{database_temp}}.traces_{{ds_in_table}} AS traces ON blocks.number = traces.block_number

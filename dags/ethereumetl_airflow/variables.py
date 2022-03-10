@@ -134,7 +134,8 @@ def read_load_dag_spark_vars(var_prefix, **kwargs):
         "spark.hadoop.fs.s3a.access.key": read_var('s3a_access_key', spark_prefix, True, **kwargs),
         "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
         "spark.hadoop.fs.s3a.fast.upload": True,
-        "spark.hadoop.fs.s3a.secret.key": read_var('s3a_secret_key', spark_prefix, True, **kwargs)
+        "spark.hadoop.fs.s3a.secret.key": read_var('s3a_secret_key', spark_prefix, True, **kwargs),
+        "spark.hadoop.hive.metastore.client.socket.timeout": 86400
     }
 
     vars = {
