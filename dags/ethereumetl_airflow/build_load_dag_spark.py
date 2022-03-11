@@ -93,7 +93,11 @@ def build_load_dag_spark(
         wait_sensor >> load_operator
         return load_operator
 
-    def add_enrich_tasks(task, write_mode='overwrite', dependencies=None):
+    def add_enrich_tasks(task,
+                         write_mode='overwrite',
+                         sql_template_path='resources/stages/enrich/sqls/spark/{task}.sql',
+                         pyspark_template_path='resources/stages/spark/insert_into_table.py.template',
+                         dependencies=None):
         enrich_operator = SparkSubmitEnrichOperator(
             task_id='enrich_{task}'.format(task=task),
             dag=dag,
@@ -107,10 +111,10 @@ def build_load_dag_spark(
                 'database_temp': dataset_name_temp,
                 'sql_template_path': os.path.join(
                     dags_folder,
-                    'resources/stages/enrich/sqls/spark/{task}.sql'.format(task=task)),
+                    sql_template_path.format(task=task)),
                 'pyspark_template_path': os.path.join(
                     dags_folder,
-                    'resources/stages/spark/insert_into_table.py.template')
+                    pyspark_template_path)
             }
         )
 
@@ -172,11 +176,17 @@ def build_load_dag_spark(
     enrich_transactions_task = add_enrich_tasks(
         'transactions', 'overwrite', dependencies=[load_blocks_task, load_transactions_task, load_receipts_task])
     enrich_logs_task = add_enrich_tasks(
-        'logs', 'overwrite', dependencies=[load_blocks_task, load_logs_task])
+        'logs', 'append',
+        sql_template_path="resources/stages/enrich/sqls/spark_optimize/{task}.sql",
+        pyspark_template_path="resources/stages/spark/append_to_partitioned_table.py.template",
+        dependencies=[load_blocks_task, load_logs_task])
     enrich_token_transfers_task = add_enrich_tasks(
         'token_transfers', 'overwrite', dependencies=[load_blocks_task, load_token_transfers_task])
     enrich_traces_task = add_enrich_tasks(
-        'traces', 'overwrite', dependencies=[load_blocks_task, load_traces_task])
+        'traces', 'append',
+        sql_template_path="resources/stages/enrich/sqls/spark_optimize/{task}.sql",
+        pyspark_template_path="resources/stages/spark/append_to_partitioned_table.py.template",
+        dependencies=[load_blocks_task, load_traces_task])
     enrich_contracts_task = add_enrich_tasks(
         'contracts', 'overwrite', dependencies=[load_blocks_task, load_contracts_task])
     enrich_tokens_task = add_enrich_tasks(
