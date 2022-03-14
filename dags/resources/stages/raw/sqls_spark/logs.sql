@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{database}}.{{table}}
+CREATE TABLE IF NOT EXISTS {{database_temp}}.{{table}}
 (
     log_index         BIGINT,
     transaction_hash  STRING,

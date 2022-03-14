@@ -1,22 +1,27 @@
-from ethereumetl_airflow.operators.spark_submit_operator import SparkSubmitOperator
+from ethereumetl_airflow.operators.spark_submit_sql_operator import SparkSubmitSQLOperator
 
 
-class SparkSubmitLoadOperator(SparkSubmitOperator):
-    def __init__(self, *args, **kwargs):
+class SparkSubmitLoadOperator(SparkSubmitSQLOperator):
+    def __init__(self,
+                 bucket,
+                 database_temp,
+                 file_format,
+                 *args,
+                 **kwargs):
         super(SparkSubmitLoadOperator, self).__init__(*args, **kwargs)
+        self._operator_type = 'load'
+        self._bucket = bucket
+        self._database_temp = database_temp
+        self._file_format = file_format
 
     def _get_sql_render_content(self, context):
-        _task = self._template_conf['task']
         return {
-            'database': self._template_conf['database'],
-            'table': '{task}_{date}'.format(task=_task, date=context['ds'].replace('-', '_')),
+            'database_temp': self._database_temp,
+            'table': '{task}_{date}'.format(task=self._task, date=context['ds'].replace('-', '_')),
             'file_path': 's3a://{bucket}/{bucket_name}'.format(
-                bucket=self._template_conf['bucket'],
+                bucket=self._bucket,
                 bucket_name='export/{task}/block_date={datestamp}/{task}.{file_format}'.format(
-                    task=_task, datestamp=context['ds'], file_format=self._template_conf['file_format']
+                    task=self._task, datestamp=context['ds'], file_format=self._file_format
                 )
             )
         }
-
-    def _get_pyspark_render_content(self, context):
-        return {}

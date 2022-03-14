@@ -1,21 +1,22 @@
-from ethereumetl_airflow.operators.spark_submit_operator import SparkSubmitOperator
+from ethereumetl_airflow.operators.spark_submit_sql_operator import SparkSubmitSQLOperator
 
 
-class SparkSubmitEnrichOperator(SparkSubmitOperator):
-    def __init__(self, *args, **kwargs):
+class SparkSubmitEnrichOperator(SparkSubmitSQLOperator):
+    def __init__(self,
+                 database,
+                 database_temp,
+                 *args,
+                 **kwargs):
         super(SparkSubmitEnrichOperator, self).__init__(*args, **kwargs)
+
+        self._operator_type = 'enrich'
+        self._database = database
+        self._database_temp = database_temp
 
     def _get_sql_render_content(self, context):
         return {
-            'database': self._template_conf['database'],
-            'database_temp': self._template_conf['database_temp'],
+            'database': self._database,
+            'database_temp': self._database_temp,
             'ds': context['ds'],
             'ds_in_table': context['ds'].replace('-', '_')
-        }
-
-    def _get_pyspark_render_content(self, context):
-        return {
-            'table': self._template_conf['task'],
-            'database': self._template_conf['database'],
-            'write_mode': self._template_conf['write_mode']
         }
