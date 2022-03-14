@@ -9,8 +9,7 @@ INSERT OVERWRITE {{database}}.token_transfers
         token_transfers.log_index,
         TIMESTAMP_SECONDS(blocks.timestamp) AS block_timestamp,
         blocks.number                       AS block_number,
-        blocks.hash                         AS block_hash,
-        TO_DATE('{{ds}}')                   AS dt
+        blocks.hash                         AS block_hash
     FROM {{database_temp}}.blocks_{{ds_in_table}} AS blocks
         JOIN {{database_temp}}.token_transfers_{{ds_in_table}} AS token_transfers
     ON blocks.number = token_transfers.block_number

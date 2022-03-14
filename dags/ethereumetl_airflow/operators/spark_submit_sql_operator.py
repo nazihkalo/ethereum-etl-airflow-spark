@@ -82,12 +82,12 @@ class SparkSubmitSQLOperator(BaseOperator):
         self._hook = None
         self._conn_id = conn_id
 
-    def _get_sql_context(self, context):
+    def _get_sql_render_context(self, context):
         raise NotImplementedError()
 
     def _render_pyspark(self, context):
         sql_template = self.read_file(self._sql_template_path)
-        sql = self.render_template(sql_template, self._get_sql_context(context))
+        sql = self.render_template(sql_template, self._get_sql_render_context(context))
 
         pyspark_path = os.path.join('/tmp', '{task}_{operator_type}_{ds}.py'.format(
             task=self._task,

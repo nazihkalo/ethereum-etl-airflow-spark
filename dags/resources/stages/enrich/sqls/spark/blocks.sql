@@ -19,6 +19,5 @@ INSERT OVERWRITE {{database}}.blocks
         blocks.gas_limit,
         blocks.gas_used,
         blocks.transaction_count,
-        blocks.base_fee_per_gas,
-        TO_DATE('{{ds}}')                   AS dt
+        blocks.base_fee_per_gas
     FROM {{database_temp}}.blocks_{{ds_in_table}} AS blocks

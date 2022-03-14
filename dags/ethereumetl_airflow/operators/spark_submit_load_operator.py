@@ -13,7 +13,7 @@ class SparkSubmitLoadOperator(SparkSubmitSQLOperator):
         self._database_temp = database_temp
         self._file_format = file_format
 
-    def _get_sql_render_content(self, context):
+    def _get_sql_render_context(self, context):
         return {
             'database_temp': self._database_temp,
             'table': '{task}_{date}'.format(task=self._task, date=context['ds'].replace('-', '_')),

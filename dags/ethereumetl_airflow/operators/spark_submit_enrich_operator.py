@@ -11,7 +11,7 @@ class SparkSubmitEnrichOperator(SparkSubmitSQLOperator):
         self._database = database
         self._database_temp = database_temp
 
-    def _get_sql_render_content(self, context):
+    def _get_sql_render_context(self, context):
         return {
             'database': self._database,
             'database_temp': self._database_temp,
