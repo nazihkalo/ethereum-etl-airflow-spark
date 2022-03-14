@@ -1,5 +1,11 @@
 {
   "ethereum_cloud_provider": "aws",
   "ethereum_output_bucket": "test-bucket",
-  "ethereum_provider_uris": "test-uris"
+  "ethereum_provider_uris": "test-uris",
+  "ethereum_spark_driver_service_account_name": "airflow-worker",
+  "ethereum_spark_image": "test-image",
+  "ethereum_spark_k8s_namespace": "airflow",
+  "ethereum_spark_metastore_uris": "thrift://hive-host:9083",
+  "ethereum_spark_s3a_access_key": "test-key",
+  "ethereum_spark_s3a_secret_key": "test-secret"
 }
