@@ -1,0 +1,5 @@
+{
+  "ethereum_cloud_provider": "aws",
+  "ethereum_output_bucket": "test-bucket",
+  "ethereum_provider_uris": "test-uris"
+}

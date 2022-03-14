@@ -1,16 +1,16 @@
 name: Test
 on: [push]
-env:
-  SECRETS_CONTEXT: ${{ toJson(secrets) }}
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
     - name: Airflow DAGs Test
       uses: TalkWIthKeyboard/airflow-dags-test-action@v1.0
       with:
         requirements-file: requirements_test.txt
         dags-path: dags
         dags-test-folder: tests/dags
+        var-file: test_var.json
