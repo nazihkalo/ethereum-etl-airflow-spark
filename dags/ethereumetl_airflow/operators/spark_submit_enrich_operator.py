@@ -7,9 +7,7 @@ class SparkSubmitEnrichOperator(SparkSubmitSQLOperator):
                  database_temp,
                  *args,
                  **kwargs):
-        super(SparkSubmitEnrichOperator, self).__init__(*args, **kwargs)
-
-        self._operator_type = 'enrich'
+        super(SparkSubmitEnrichOperator, self).__init__(operator_type='enrich', *args, **kwargs)
         self._database = database
         self._database_temp = database_temp
 

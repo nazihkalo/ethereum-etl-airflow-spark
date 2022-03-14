@@ -8,8 +8,7 @@ class SparkSubmitLoadOperator(SparkSubmitSQLOperator):
                  file_format,
                  *args,
                  **kwargs):
-        super(SparkSubmitLoadOperator, self).__init__(*args, **kwargs)
-        self._operator_type = 'load'
+        super(SparkSubmitLoadOperator, self).__init__(operator_type='load', *args, **kwargs)
         self._bucket = bucket
         self._database_temp = database_temp
         self._file_format = file_format

@@ -22,7 +22,6 @@ class SparkSubmitSQLOperator(BaseOperator):
                  task,
                  operator_type,
                  sql_template_path,
-                 render_context,
                  # About Spark
                  conf=None,
                  conn_id='spark_default',
@@ -48,11 +47,15 @@ class SparkSubmitSQLOperator(BaseOperator):
                  spark_binary=None,
                  *args,
                  **kwargs):
-        super(SparkSubmitSQLOperator, self).__init__(*args, **kwargs)
+        super(SparkSubmitSQLOperator, self).__init__(
+            task_id=f'{operator_type}_{task}',
+            name=f'{operator_type}_{task}',
+            *args, **kwargs
+        )
+
         self._task = task
         self._operator_type = operator_type
         self._sql_template_path = sql_template_path
-        self._render_context = render_context
 
         # About Spark
         self._conf = conf
@@ -78,14 +81,6 @@ class SparkSubmitSQLOperator(BaseOperator):
         self._spark_binary = spark_binary
         self._hook = None
         self._conn_id = conn_id
-
-        # About BaseOperator
-        task_name = '{operator_type}_{task}'.format(
-            operator_type=self._operator_type,
-            task=self._task
-        )
-        self.task_id = task_name
-        self.name = task_name
 
     def _get_sql_context(self, context):
         raise NotImplementedError()

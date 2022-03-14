@@ -6,9 +6,7 @@ class SparkSubmitCleanOperator(SparkSubmitSQLOperator):
                  database_temp,
                  *args,
                  **kwargs):
-        super(SparkSubmitCleanOperator, self).__init__(*args, **kwargs)
-
-        self._operator_type = 'clean'
+        super(SparkSubmitCleanOperator, self).__init__(operator_type='clean', *args, **kwargs)
         self._database_temp = database_temp
 
     def _get_sql_render_content(self, context):
