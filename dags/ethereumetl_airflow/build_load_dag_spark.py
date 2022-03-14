@@ -55,7 +55,15 @@ def build_load_dag_spark(
 
     dags_folder = os.environ.get('DAGS_FOLDER', '/opt/airflow/dags/repo/dags')
 
-    def add_load_tasks(task, file_format):
+    common_operator_conf = {
+        'dag': dag,
+        'conf': spark_conf,
+        'bucket': output_bucket,
+        'database': dataset_name,
+        'database_temp': dataset_name_temp
+    }
+
+    def add_load_tasks(task, file_format='json'):
         bucket_file_key = 'export/{task}/block_date={datestamp}/{task}.{file_format}'.format(
             task=task, datestamp='{{ds}}', file_format=file_format
         )
@@ -70,11 +78,8 @@ def build_load_dag_spark(
         )
 
         load_operator = SparkSubmitLoadOperator(
-            dag=dag,
-            conf=spark_conf,
+            **common_operator_conf,
             task=task,
-            bucket=output_bucket,
-            database=dataset_name_temp,
             file_format=file_format,
             sql_template_path=os.path.join(
                 dags_folder,
@@ -86,11 +91,8 @@ def build_load_dag_spark(
 
     def add_enrich_tasks(task, dependencies=None):
         enrich_operator = SparkSubmitEnrichOperator(
-            dag=dag,
-            conf=spark_conf,
+            **common_operator_conf,
             task=task,
-            database=dataset_name,
-            database_temp=dataset_name_temp,
             sql_template_path=os.path.join(
                 dags_folder,
                 'resources/stages/enrich/sqls/spark/{task}.sql'.format(task=task))
@@ -101,7 +103,7 @@ def build_load_dag_spark(
                 dependency >> enrich_operator
         return enrich_operator
 
-    def add_clean_tasks(task, file_format, dependencies=None):
+    def add_clean_tasks(task, file_format='json', dependencies=None):
         bucket_file_key = 'export/{task}/block_date={datestamp}/{task}.{file_format}'.format(
             task=task, datestamp='{{ds}}', file_format=file_format
         )
@@ -114,10 +116,8 @@ def build_load_dag_spark(
         )
 
         clean_operator = SparkSubmitCleanOperator(
-            dag=dag,
-            conf=spark_conf,
+            **common_operator_conf,
             task=task,
-            database_temp=dataset_name_temp,
             sql_template_path=os.path.join(
                 dags_folder,
                 'resources/stages/enrich/sqls/spark/clean_table.sql')
@@ -131,14 +131,14 @@ def build_load_dag_spark(
         clean_operator >> s3_delete_operator
 
     # Load tasks #
-    load_blocks_task = add_load_tasks('blocks', 'json')
-    load_transactions_task = add_load_tasks('transactions', 'json')
-    load_receipts_task = add_load_tasks('receipts', 'json')
-    load_logs_task = add_load_tasks('logs', 'json')
-    load_token_transfers_task = add_load_tasks('token_transfers', 'json')
-    load_traces_task = add_load_tasks('traces', 'json')
-    load_contracts_task = add_load_tasks('contracts', 'json')
-    load_tokens_task = add_load_tasks('tokens', 'json')
+    load_blocks_task = add_load_tasks('blocks')
+    load_transactions_task = add_load_tasks('transactions')
+    load_receipts_task = add_load_tasks('receipts')
+    load_logs_task = add_load_tasks('logs')
+    load_token_transfers_task = add_load_tasks('token_transfers')
+    load_traces_task = add_load_tasks('traces')
+    load_contracts_task = add_load_tasks('contracts')
+    load_tokens_task = add_load_tasks('tokens')
 
     # Enrich tasks #
     enrich_blocks_task = add_enrich_tasks('blocks', [load_blocks_task])
@@ -151,7 +151,7 @@ def build_load_dag_spark(
     enrich_tokens_task = add_enrich_tasks('tokens', [load_tokens_task])
 
     # Clean tasks #
-    add_clean_tasks('blocks', 'json', dependencies=[
+    add_clean_tasks('blocks', dependencies=[
         enrich_blocks_task,
         enrich_transactions_task,
         enrich_logs_task,
@@ -159,12 +159,12 @@ def build_load_dag_spark(
         enrich_traces_task,
         enrich_contracts_task
     ])
-    add_clean_tasks('transactions', 'json', dependencies=[enrich_transactions_task])
-    add_clean_tasks('logs', 'json', dependencies=[enrich_logs_task])
-    add_clean_tasks('token_transfers', 'json', dependencies=[enrich_token_transfers_task])
-    add_clean_tasks('traces', 'json', dependencies=[enrich_traces_task])
-    add_clean_tasks('contracts', 'json', dependencies=[enrich_contracts_task])
-    add_clean_tasks('tokens', 'json', dependencies=[enrich_tokens_task])
-    add_clean_tasks('receipts', 'json', dependencies=[enrich_transactions_task])
+    add_clean_tasks('transactions', dependencies=[enrich_transactions_task])
+    add_clean_tasks('logs', dependencies=[enrich_logs_task])
+    add_clean_tasks('token_transfers', dependencies=[enrich_token_transfers_task])
+    add_clean_tasks('traces', dependencies=[enrich_traces_task])
+    add_clean_tasks('contracts', dependencies=[enrich_contracts_task])
+    add_clean_tasks('tokens', dependencies=[enrich_tokens_task])
+    add_clean_tasks('receipts', dependencies=[enrich_transactions_task])
 
     return dag

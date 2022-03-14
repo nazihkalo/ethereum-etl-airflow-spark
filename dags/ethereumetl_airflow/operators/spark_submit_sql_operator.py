@@ -90,9 +90,6 @@ class SparkSubmitSQLOperator(BaseOperator):
     def _get_sql_context(self, context):
         raise NotImplementedError()
 
-    def _get_pyspark_context(self, context):
-        raise NotImplementedError()
-
     def _render_pyspark(self, context):
         sql_template = self.read_file(self._sql_template_path)
         sql = self.render_template(sql_template, self._get_sql_context(context))
@@ -105,8 +102,7 @@ class SparkSubmitSQLOperator(BaseOperator):
         dags_folder = os.environ.get('DAGS_FOLDER', '/opt/airflow/dags/repo/dags')
         pyspark_template_path = os.path.join(dags_folder, 'resources/stages/spark/spark_sql.py.template')
         pyspark_template = self.read_file(pyspark_template_path)
-        pyspark = self.render_template(pyspark_template,
-                                       {'sql': sql, **self._get_pyspark_context(context)})
+        pyspark = self.render_template(pyspark_template, {'sql': sql})
 
         print('Load pyspark:')
         print(pyspark)

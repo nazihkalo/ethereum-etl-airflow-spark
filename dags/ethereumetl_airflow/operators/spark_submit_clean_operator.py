@@ -16,6 +16,3 @@ class SparkSubmitCleanOperator(SparkSubmitSQLOperator):
             'database_temp': self._database_temp,
             'table': '{task}_{date}'.format(task=self._task, date=context['ds'].replace('-', '_'))
         }
-
-    def _get_pyspark_render_content(self, context):  # noqa
-        return {}

@@ -12,7 +12,7 @@ class SparkSubmitEnrichOperator(SparkSubmitSQLOperator):
         self._operator_type = 'enrich'
         self._database = database
         self._database_temp = database_temp
-        
+
     def _get_sql_render_content(self, context):
         return {
             'database': self._database,
@@ -20,6 +20,3 @@ class SparkSubmitEnrichOperator(SparkSubmitSQLOperator):
             'ds': context['ds'],
             'ds_in_table': context['ds'].replace('-', '_')
         }
-
-    def _get_pyspark_render_content(self, context):  # noqa
-        return {}
