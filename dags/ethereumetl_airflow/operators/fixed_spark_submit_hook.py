@@ -3,9 +3,15 @@ import re
 from airflow.contrib.hooks.spark_submit_hook import SparkSubmitHook
 
 
-class NewSparkSubmitHook(SparkSubmitHook):
+class FixedSparkSubmitHook(SparkSubmitHook):  # noqa
+    """
+    The `_process_spark_submit_log` method in the SparkSubmitHook, it will track the output logs to determine the status
+    of the job, the regex expression is "exit code", but in the latest spark, the end label is "Exit code".
+    The class inherits by SparkSubmitHook, overwrite `_process_spark_submit_log` method to enlarge the match scope.
+    """
+
     def __init__(self, *args, **kwargs):
-        super(NewSparkSubmitHook, self).__init__(*args, **kwargs)
+        super(FixedSparkSubmitHook, self).__init__(*args, **kwargs)
 
     # Override this function in the SparkSubmitHook
     def _process_spark_submit_log(self, itr):
@@ -24,7 +30,7 @@ class NewSparkSubmitHook(SparkSubmitHook):
         for line in itr:
             line = line.strip()
             # If we run yarn cluster mode, we want to extract the application id from
-            # the logs so we can kill the application when we stop it unexpectedly
+            # the logs, so we can kill the application when we stop it unexpectedly
             if self._is_yarn and self._connection['deploy_mode'] == 'cluster':
                 match = re.search('(application[0-9_]+)', line)
                 if match:
@@ -33,7 +39,7 @@ class NewSparkSubmitHook(SparkSubmitHook):
                                   self._yarn_application_id)
 
             # If we run Kubernetes cluster mode, we want to extract the driver pod id
-            # from the logs so we can kill the application when we stop it unexpectedly
+            # from the logs, so we can kill the application when we stop it unexpectedly
             elif self._is_kubernetes:
                 match = re.search(r'\s*pod name: ((.+?)-([a-z0-9]+)-driver)', line)
                 if match:
@@ -46,7 +52,7 @@ class NewSparkSubmitHook(SparkSubmitHook):
                 if match_exit_code:
                     self._spark_exit_code = int(match_exit_code.groups()[0])
 
-            # if we run in standalone cluster mode and we want to track the driver status
+            # if we run in standalone cluster mode, and we want to track the driver status
             # we need to extract the driver id from the logs. This allows us to poll for
             # the status using the driver id. Also, we can kill the driver when needed.
             elif self._should_track_driver_status and not self._driver_id:

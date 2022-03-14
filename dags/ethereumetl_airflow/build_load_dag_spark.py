@@ -24,7 +24,6 @@ def build_load_dag_spark(
 ):
     # The following datasets must be created in Spark:
     # - crypto_{chain}_raw
-    # - crypto_{chain}_temp
     # - crypto_{chain}
 
     dataset_name = f'{chain}'
@@ -71,51 +70,30 @@ def build_load_dag_spark(
         )
 
         load_operator = SparkSubmitLoadOperator(
-            task_id='load_{task}'.format(task=task),
             dag=dag,
-            name='load_{task}'.format(task=task),
             conf=spark_conf,
-            template_conf={
-                'task': task,
-                'bucket': output_bucket,
-                'database': dataset_name_temp,
-                'operator_type': 'load',
-                'file_format': file_format,
-                'sql_template_path': os.path.join(
-                    dags_folder,
-                    'resources/stages/raw/sqls_spark/{task}.sql'.format(task=task)),
-                'pyspark_template_path': os.path.join(
-                    dags_folder,
-                    'resources/stages/spark/spark_sql.py.template')
-            }
+            task=task,
+            bucket=output_bucket,
+            database=dataset_name_temp,
+            file_format=file_format,
+            sql_template_path=os.path.join(
+                dags_folder,
+                'resources/stages/raw/sqls_spark/{task}.sql'.format(task=task))
         )
 
         wait_sensor >> load_operator
         return load_operator
 
-    def add_enrich_tasks(task,
-                         write_mode='overwrite',
-                         sql_template_path='resources/stages/enrich/sqls/spark/{task}.sql',
-                         pyspark_template_path='resources/stages/spark/insert_into_table.py.template',
-                         dependencies=None):
+    def add_enrich_tasks(task, dependencies=None):
         enrich_operator = SparkSubmitEnrichOperator(
-            task_id='enrich_{task}'.format(task=task),
             dag=dag,
-            name='enrich_{task}'.format(task=task),
             conf=spark_conf,
-            template_conf={
-                'task': task,
-                'database': dataset_name,
-                'write_mode': write_mode,
-                'operator_type': 'enrich',
-                'database_temp': dataset_name_temp,
-                'sql_template_path': os.path.join(
-                    dags_folder,
-                    sql_template_path.format(task=task)),
-                'pyspark_template_path': os.path.join(
-                    dags_folder,
-                    pyspark_template_path)
-            }
+            task=task,
+            database=dataset_name,
+            database_temp=dataset_name_temp,
+            sql_template_path=os.path.join(
+                dags_folder,
+                'resources/stages/enrich/sqls/spark/{task}.sql'.format(task=task))
         )
 
         if dependencies is not None and len(dependencies) > 0:
@@ -136,21 +114,13 @@ def build_load_dag_spark(
         )
 
         clean_operator = SparkSubmitCleanOperator(
-            task_id='clean_{task}'.format(task=task),
             dag=dag,
-            name='clean_{task}'.format(task=task),
             conf=spark_conf,
-            template_conf={
-                'task': task,
-                'operator_type': 'clean',
-                'database_temp': dataset_name_temp,
-                'sql_template_path': os.path.join(
-                    dags_folder,
-                    'resources/stages/enrich/sqls/spark/clean_table.sql'),
-                'pyspark_template_path': os.path.join(
-                    dags_folder,
-                    'resources/stages/spark/spark_sql.py.template')
-            }
+            task=task,
+            database_temp=dataset_name_temp,
+            sql_template_path=os.path.join(
+                dags_folder,
+                'resources/stages/enrich/sqls/spark/clean_table.sql')
         )
 
         # Drop table firstly and then delete data in S3.
@@ -171,26 +141,14 @@ def build_load_dag_spark(
     load_tokens_task = add_load_tasks('tokens', 'json')
 
     # Enrich tasks #
-    enrich_blocks_task = add_enrich_tasks(
-        'blocks', 'overwrite', dependencies=[load_blocks_task])
-    enrich_transactions_task = add_enrich_tasks(
-        'transactions', 'overwrite', dependencies=[load_blocks_task, load_transactions_task, load_receipts_task])
-    enrich_logs_task = add_enrich_tasks(
-        'logs', 'append',
-        sql_template_path="resources/stages/enrich/sqls/spark_optimize/{task}.sql",
-        pyspark_template_path="resources/stages/spark/append_to_partitioned_table.py.template",
-        dependencies=[load_blocks_task, load_logs_task])
-    enrich_token_transfers_task = add_enrich_tasks(
-        'token_transfers', 'overwrite', dependencies=[load_blocks_task, load_token_transfers_task])
-    enrich_traces_task = add_enrich_tasks(
-        'traces', 'append',
-        sql_template_path="resources/stages/enrich/sqls/spark_optimize/{task}.sql",
-        pyspark_template_path="resources/stages/spark/append_to_partitioned_table.py.template",
-        dependencies=[load_blocks_task, load_traces_task])
-    enrich_contracts_task = add_enrich_tasks(
-        'contracts', 'overwrite', dependencies=[load_blocks_task, load_contracts_task])
-    enrich_tokens_task = add_enrich_tasks(
-        'tokens', 'append', dependencies=[load_tokens_task])
+    enrich_blocks_task = add_enrich_tasks('blocks', [load_blocks_task])
+    enrich_transactions_task = add_enrich_tasks('transactions',
+                                                [load_blocks_task, load_transactions_task, load_receipts_task])
+    enrich_logs_task = add_enrich_tasks('logs', [load_blocks_task, load_logs_task])
+    enrich_token_transfers_task = add_enrich_tasks('token_transfers', [load_blocks_task, load_token_transfers_task])
+    enrich_traces_task = add_enrich_tasks('traces', [load_blocks_task, load_traces_task])
+    enrich_contracts_task = add_enrich_tasks('contracts', [load_blocks_task, load_contracts_task])
+    enrich_tokens_task = add_enrich_tasks('tokens', [load_tokens_task])
 
     # Clean tasks #
     add_clean_tasks('blocks', 'json', dependencies=[
