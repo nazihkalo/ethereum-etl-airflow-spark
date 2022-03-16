@@ -3,8 +3,7 @@ from datetime import datetime
 from typing import List, Optional
 
 import requests
-
-from dags.ethereumetl_airflow.prices_provider.prices_provider import PricesProvider, Pair, PriceRecord
+from ethereumetl_airflow.prices_provider.prices_provider import PricesProvider, Pair, PriceRecord
 
 
 class CryptowatPricesProvider(PricesProvider):
