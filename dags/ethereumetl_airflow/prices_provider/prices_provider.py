@@ -12,9 +12,9 @@ class Pair:
 class PriceRecord:
     def __init__(self, symbol: str, time: datetime.datetime, price: float):
         self.symbol = symbol
-        self.time = time
+        self.time = time.strftime("%Y-%m-%d %H:%M:%S")
         self.price = price
-        self.dt = time.date
+        self.dt = time.strftime("%Y-%m-%d")
 
 
 class PricesProvider:
@@ -34,6 +34,6 @@ class PricesProvider:
 
             for pair in pairs:
                 records = self.get_single_pair_daily_price(pair, periods, start, end)
-                f.write(json.dumps(records))
+                f.write(json.dumps([record.__dict__ for record in records]))
 
         return output_path
