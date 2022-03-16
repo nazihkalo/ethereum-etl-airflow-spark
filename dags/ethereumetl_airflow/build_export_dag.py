@@ -19,8 +19,7 @@ from ethereumetl.cli import (
     export_traces,
     extract_field,
 )
-
-from dags.ethereumetl_airflow.prices_provider.cryptowat_prices_provider import CryptowatPricesProvider
+from ethereumetl_airflow.prices_provider.cryptowat_prices_provider import CryptowatPricesProvider
 
 
 def build_export_dag(
