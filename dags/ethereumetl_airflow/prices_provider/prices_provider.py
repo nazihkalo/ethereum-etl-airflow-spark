@@ -34,6 +34,6 @@ class PricesProvider:
 
             for pair in pairs:
                 records = self.get_single_pair_daily_price(pair, periods, start, end)
-                f.write(json.dumps(records))
+                f.write(json.dumps(records.__dict__))
 
         return output_path
