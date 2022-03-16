@@ -14,7 +14,7 @@ class PriceRecord:
         self.symbol = symbol
         self.time = time
         self.price = price
-        self.dt = time.dt.date
+        self.dt = time.date
 
 
 class PricesProvider:
