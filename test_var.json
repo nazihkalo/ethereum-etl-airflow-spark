@@ -7,5 +7,6 @@
   "ethereum_spark_k8s_namespace": "airflow",
   "ethereum_spark_metastore_uris": "thrift://hive-host:9083",
   "ethereum_spark_s3a_access_key": "test-key",
-  "ethereum_spark_s3a_secret_key": "test-secret"
+  "ethereum_spark_s3a_secret_key": "test-secret",
+  "ethereum_prices_api_key": "test-api-key"
 }

@@ -1,13 +1,14 @@
 from __future__ import print_function
 
-import os
+import datetime
 import logging
+import os
 from datetime import timedelta
 from tempfile import TemporaryDirectory
 
 from airflow import DAG, configuration
 from airflow.operators import python_operator
-
+from dateutil import tz
 from ethereumetl.cli import (
     get_block_range_for_date,
     export_blocks_and_transactions,
@@ -19,11 +20,15 @@ from ethereumetl.cli import (
     extract_field,
 )
 
+from dags.ethereumetl_airflow.prices_provider.cryptowat_prices_provider import CryptowatPricesProvider
+
 
 def build_export_dag(
         dag_id,
         provider_uris,
         provider_uris_archival,
+        prices_api_key,
+        prices_periods,
         output_bucket,
         cloud_provider,
         export_start_date,
@@ -55,6 +60,7 @@ def build_export_dag(
     extract_tokens_toggle = kwargs.get('extract_tokens_toggle')
     extract_token_transfers_toggle = kwargs.get('extract_token_transfers_toggle')
     export_traces_toggle = kwargs.get('export_traces_toggle')
+    export_prices_toggle = kwargs.get('export_prices_toggle')
 
     if export_max_active_runs is None:
         export_max_active_runs = configuration.conf.getint('core', 'max_active_runs_per_dag')
@@ -265,6 +271,30 @@ def build_export_dag(
                 os.path.join(tempdir, "traces.json"), export_path("traces", execution_date)
             )
 
+    def export_prices_command(execution_date, **kwargs):
+        with TemporaryDirectory() as tempdir:
+            dt = datetime.datetime.strptime(execution_date, '%Y-%m-%dT%H:%M:%S%z').date()
+            start_dt = datetime.datetime(dt.year, dt.month, dt.day, tzinfo=tz.tzutc())
+            end_dt = start_dt + timedelta(days=1)
+            start_ts = int(start_dt.timestamp())
+            end_ts = int(end_dt.timestamp())
+
+            logging.info('Calling export_prices({}, {}, {})'.format(
+                prices_periods, start_ts, end_ts
+            ))
+
+            prices_provider = CryptowatPricesProvider(api_key=prices_api_key)
+            prices_provider.create_temp_json(
+                output_path=os.path.join(tempdir, "prices.json"),
+                periods=prices_periods,
+                start=start_ts,
+                end=end_ts
+            )
+
+            copy_to_export_path(
+                os.path.join(tempdir, "prices.json"), export_path("prices", execution_date)
+            )
+
     def add_export_task(toggle, task_id, python_callable, dependencies=None):
         if toggle:
             operator = python_operator.PythonOperator(
@@ -324,6 +354,12 @@ def build_export_dag(
         dependencies=[extract_contracts_operator],
     )
 
+    export_prices_operator = add_export_task(
+        export_prices_toggle,
+        "export_prices",
+        export_prices_command,
+    )
+
     return dag
 
 
@@ -351,9 +387,6 @@ MEGABYTE = 1024 * 1024
 # Helps avoid OverflowError: https://stackoverflow.com/questions/47610283/cant-upload-2gb-to-google-cloud-storage
 # https://developers.google.com/api-client-library/python/guide/media_upload#resumable-media-chunked-upload
 def upload_to_gcs(gcs_hook, bucket, object, filename, mime_type='application/octet-stream'):
-    from apiclient.http import MediaFileUpload
-    from googleapiclient import errors
-
     service = gcs_hook.get_conn()
     bucket = service.get_bucket(bucket)
     blob = bucket.blob(object, chunk_size=10 * MEGABYTE)
