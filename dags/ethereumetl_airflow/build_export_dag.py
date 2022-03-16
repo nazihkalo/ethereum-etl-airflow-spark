@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import datetime
 import logging
 import os
 from datetime import timedelta
@@ -8,7 +7,6 @@ from tempfile import TemporaryDirectory
 
 from airflow import DAG, configuration
 from airflow.operators import python_operator
-from dateutil import tz
 from ethereumetl.cli import (
     get_block_range_for_date,
     export_blocks_and_transactions,
@@ -272,11 +270,8 @@ def build_export_dag(
 
     def export_prices_command(execution_date, **kwargs):
         with TemporaryDirectory() as tempdir:
-            dt = datetime.datetime.strptime(execution_date, '%Y-%m-%dT%H:%M:%S%z').date()
-            start_dt = datetime.datetime(dt.year, dt.month, dt.day, tzinfo=tz.tzutc())
-            end_dt = start_dt + timedelta(days=1)
-            start_ts = int(start_dt.timestamp())
-            end_ts = int(end_dt.timestamp())
+            start_ts = int(execution_date.start_of('day').timestamp())
+            end_ts = int(execution_date.end_of('day').timestamp())
 
             logging.info('Calling export_prices({}, {}, {})'.format(
                 prices_periods, start_ts, end_ts
