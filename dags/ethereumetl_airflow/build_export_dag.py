@@ -279,14 +279,14 @@ def build_export_dag(
 
             prices_provider = CryptowatPricesProvider(api_key=prices_api_key)
             prices_provider.create_temp_json(
-                output_path=os.path.join(tempdir, "prices.json"),
+                output_path=os.path.join(tempdir, "prices.csv"),
                 periods=prices_periods,
                 start=start_ts,
                 end=end_ts
             )
 
             copy_to_export_path(
-                os.path.join(tempdir, "prices.json"), export_path("prices", execution_date)
+                os.path.join(tempdir, "prices.csv"), export_path("prices", execution_date)
             )
 
     def add_export_task(toggle, task_id, python_callable, dependencies=None):

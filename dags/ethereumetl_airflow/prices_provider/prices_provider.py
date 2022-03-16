@@ -1,5 +1,5 @@
+import csv
 import datetime
-import json
 from typing import List
 
 from ethereumetl.progress_logger import ProgressLogger
@@ -32,13 +32,16 @@ class PricesProvider:
         raise NotImplementedError()
 
     def create_temp_json(self, output_path: str, periods: int, start: int, end: int) -> str:
-        with open(output_path, 'w') as f:
-            pairs = self.get_all_usd_pair()
-            self.progress_logger.start(total_items=len(pairs))
+        pairs = self.get_all_usd_pair()
+        self.progress_logger.start(total_items=len(pairs))
 
-            for index, pair in enumerate(pairs):
-                records = self.get_single_pair_daily_price(pair, periods, start, end)
-                f.write(json.dumps([record.__dict__ for record in records]))
+        with open(output_path, 'w') as csvfile:
+            spam_writer = csv.DictWriter(csvfile, fieldnames=['symbol', 'time', 'price', 'dt'])
+            spam_writer.writeheader()
+
+            for pair in pairs:
+                for record in self.get_single_pair_daily_price(pair, periods, start, end):
+                    spam_writer.writerow(record.__dict__)
                 self.progress_logger.track()
 
         self.progress_logger.finish()
