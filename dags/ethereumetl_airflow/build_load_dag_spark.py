@@ -28,8 +28,8 @@ def build_load_dag_spark(
 
     dataset_name = f'{chain}'
     dataset_name_temp = f'{chain}_raw'
-    prices_dataset_name = 'price'
-    prices_dataset_name_temp = 'price_raw'
+    prices_dataset_name = 'prices'
+    prices_dataset_name_temp = 'prices_raw'
 
     if not spark_conf:
         raise ValueError('k8s_config is required')
@@ -67,13 +67,15 @@ def build_load_dag_spark(
         'prices_database_temp': prices_dataset_name_temp
     }
 
-    def add_load_tasks(task, file_format='json'):
+    def add_load_tasks(task, file_format='json', prices_task=False):
+        _task = task if not prices_task else f'prices_{task}'
+
         bucket_file_key = 'export/{task}/block_date={datestamp}/{task}.{file_format}'.format(
-            task=task, datestamp='{{ds}}', file_format=file_format
+            task=_task, datestamp='{{ds}}', file_format=file_format
         )
 
         wait_sensor = S3KeySensor(
-            task_id='wait_latest_{task}'.format(task=task),
+            task_id='wait_latest_{task}'.format(task=_task),
             timeout=60 * 60,
             poke_interval=60,
             bucket_key=bucket_file_key,
@@ -87,19 +89,21 @@ def build_load_dag_spark(
             file_format=file_format,
             sql_template_path=os.path.join(
                 dags_folder,
-                'resources/stages/raw/sqls_spark/{task}.sql'.format(task=task))
+                'resources/stages/raw/sqls_spark/{task}.sql'.format(task=_task))
         )
 
         wait_sensor >> load_operator
         return load_operator
 
-    def add_enrich_tasks(task, dependencies=None):
+    def add_enrich_tasks(task, dependencies=None, prices_task=False):
+        _task = task if not prices_task else f'prices_{task}'
+
         enrich_operator = SparkSubmitEnrichOperator(
             **common_operator_conf,
             task=task,
             sql_template_path=os.path.join(
                 dags_folder,
-                'resources/stages/enrich/sqls/spark/{task}.sql'.format(task=task))
+                'resources/stages/enrich/sqls/spark/{task}.sql'.format(task=_task))
         )
 
         if dependencies is not None and len(dependencies) > 0:
@@ -107,13 +111,15 @@ def build_load_dag_spark(
                 dependency >> enrich_operator
         return enrich_operator
 
-    def add_clean_tasks(task, file_format='json', dependencies=None):
+    def add_clean_tasks(task, file_format='json', dependencies=None, prices_task=False):
+        _task = task if not prices_task else f'prices_{task}'
+
         bucket_file_key = 'export/{task}/block_date={datestamp}/{task}.{file_format}'.format(
-            task=task, datestamp='{{ds}}', file_format=file_format
+            task=_task, datestamp='{{ds}}', file_format=file_format
         )
 
         s3_delete_operator = S3DeleteObjectsOperator(
-            task_id='clean_{task}_s3_file'.format(task=task),
+            task_id='clean_{task}_s3_file'.format(task=_task),
             dag=dag,
             bucket=output_bucket,
             keys=bucket_file_key,
@@ -143,7 +149,7 @@ def build_load_dag_spark(
     load_traces_task = add_load_tasks('traces')
     load_contracts_task = add_load_tasks('contracts')
     load_tokens_task = add_load_tasks('tokens')
-    load_prices_usd_task = add_load_tasks('usd', file_format='csv')
+    load_prices_usd_task = add_load_tasks('usd', file_format='csv', prices_task=True)
 
     # Enrich tasks #
     enrich_blocks_task = add_enrich_tasks('blocks', [load_blocks_task])
@@ -154,7 +160,7 @@ def build_load_dag_spark(
     enrich_traces_task = add_enrich_tasks('traces', [load_blocks_task, load_traces_task])
     enrich_contracts_task = add_enrich_tasks('contracts', [load_blocks_task, load_contracts_task])
     enrich_tokens_task = add_enrich_tasks('tokens', [load_tokens_task])
-    enrich_prices_usd_task = add_enrich_tasks('usd', [load_prices_usd_task])
+    enrich_prices_usd_task = add_enrich_tasks('usd', dependencies=[load_prices_usd_task], prices_task=True)
 
     # Clean tasks #
     add_clean_tasks('blocks', dependencies=[
@@ -172,6 +178,6 @@ def build_load_dag_spark(
     add_clean_tasks('contracts', dependencies=[enrich_contracts_task])
     add_clean_tasks('tokens', dependencies=[enrich_tokens_task])
     add_clean_tasks('receipts', dependencies=[enrich_transactions_task])
-    add_clean_tasks('usd', dependencies=[enrich_prices_usd_task])
+    add_clean_tasks('usd', file_format='csv', dependencies=[enrich_prices_usd_task], prices_task=True)
 
     return dag
