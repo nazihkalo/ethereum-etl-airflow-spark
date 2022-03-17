@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{database_temp}}.{{table}}
+CREATE TABLE IF NOT EXISTS `{{database_temp}}`.`{{table}}`
 (
     address            STRING,
     bytecode           STRING,
@@ -6,7 +6,5 @@ CREATE TABLE IF NOT EXISTS {{database_temp}}.{{table}}
     is_erc20           BOOLEAN,
     is_erc721          BOOLEAN,
     block_number       BIGINT
-) USING json
-OPTIONS (
-    path "{{file_path}}"
-);
+) USING {{file_format}}
+    OPTIONS (path "{{file_path}}");

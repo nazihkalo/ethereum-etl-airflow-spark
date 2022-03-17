@@ -28,6 +28,8 @@ def build_load_dag_spark(
 
     dataset_name = f'{chain}'
     dataset_name_temp = f'{chain}_raw'
+    prices_dataset_name = 'price'
+    prices_dataset_name_temp = 'price_raw'
 
     if not spark_conf:
         raise ValueError('k8s_config is required')
@@ -60,7 +62,9 @@ def build_load_dag_spark(
         'conf': spark_conf,
         'bucket': output_bucket,
         'database': dataset_name,
-        'database_temp': dataset_name_temp
+        'database_temp': dataset_name_temp,
+        'prices_database': prices_dataset_name,
+        'prices_database_temp': prices_dataset_name_temp
     }
 
     def add_load_tasks(task, file_format='json'):
@@ -139,6 +143,7 @@ def build_load_dag_spark(
     load_traces_task = add_load_tasks('traces')
     load_contracts_task = add_load_tasks('contracts')
     load_tokens_task = add_load_tasks('tokens')
+    load_prices_usd_task = add_load_tasks('usd', file_format='csv')
 
     # Enrich tasks #
     enrich_blocks_task = add_enrich_tasks('blocks', [load_blocks_task])
@@ -149,6 +154,7 @@ def build_load_dag_spark(
     enrich_traces_task = add_enrich_tasks('traces', [load_blocks_task, load_traces_task])
     enrich_contracts_task = add_enrich_tasks('contracts', [load_blocks_task, load_contracts_task])
     enrich_tokens_task = add_enrich_tasks('tokens', [load_tokens_task])
+    enrich_prices_usd_task = add_enrich_tasks('usd', [load_prices_usd_task])
 
     # Clean tasks #
     add_clean_tasks('blocks', dependencies=[
@@ -166,5 +172,6 @@ def build_load_dag_spark(
     add_clean_tasks('contracts', dependencies=[enrich_contracts_task])
     add_clean_tasks('tokens', dependencies=[enrich_tokens_task])
     add_clean_tasks('receipts', dependencies=[enrich_transactions_task])
+    add_clean_tasks('usd', dependencies=[enrich_prices_usd_task])
 
     return dag

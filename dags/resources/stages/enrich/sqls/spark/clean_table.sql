@@ -1,1 +1,1 @@
-DROP TABLE {{database_temp}}.{{table}}
+DROP TABLE `{{database_temp}}`.`{{table}}`

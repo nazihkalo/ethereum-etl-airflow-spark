@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{database_temp}}.{{table}}
+CREATE TABLE IF NOT EXISTS `{{database_temp}}`.`{{table}}`
 (
     number            BIGINT,
     hash              STRING,
@@ -19,7 +19,5 @@ CREATE TABLE IF NOT EXISTS {{database_temp}}.{{table}}
     timestamp         BIGINT,
     transaction_count BIGINT,
     base_fee_per_gas  BIGINT
-) USING json
-OPTIONS (
-    path "{{file_path}}"
-);
+) USING {{file_format}}
+    OPTIONS (path "{{file_path}}");

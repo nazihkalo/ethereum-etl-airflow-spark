@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS {{database_temp}}.{{table}}
+CREATE TABLE IF NOT EXISTS `{{database_temp}}`.`{{table}}`
 (
     token_address    STRING,
     from_address     STRING,
@@ -7,7 +7,5 @@ CREATE TABLE IF NOT EXISTS {{database_temp}}.{{table}}
     transaction_hash STRING,
     log_index        BIGINT,
     block_number     BIGINT
-) USING json
-OPTIONS (
-    path "{{file_path}}"
-);
+) USING {{file_format}}
+    OPTIONS (path "{{file_path}}");
