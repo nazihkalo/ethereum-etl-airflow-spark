@@ -57,7 +57,7 @@ def build_export_dag(
     extract_tokens_toggle = kwargs.get('extract_tokens_toggle')
     extract_token_transfers_toggle = kwargs.get('extract_token_transfers_toggle')
     export_traces_toggle = kwargs.get('export_traces_toggle')
-    export_prices_toggle = kwargs.get('export_prices_toggle')
+    export_prices_usd_toggle = kwargs.get('export_prices_usd_toggle')
 
     if export_max_active_runs is None:
         export_max_active_runs = configuration.conf.getint('core', 'max_active_runs_per_dag')
@@ -268,26 +268,29 @@ def build_export_dag(
                 os.path.join(tempdir, "traces.json"), export_path("traces", execution_date)
             )
 
-    def export_prices_command(execution_date, **kwargs):
-        with TemporaryDirectory() as tempdir:
-            start_ts = int(execution_date.start_of('day').timestamp())
-            end_ts = int(execution_date.end_of('day').timestamp())
+    def export_prices_command(symbol):
+        def export_prices(execution_date, **kwargs):
+            with TemporaryDirectory() as tempdir:
+                start_ts = int(execution_date.start_of('day').timestamp())
+                end_ts = int(execution_date.end_of('day').timestamp())
 
-            logging.info('Calling export_prices({}, {}, {})'.format(
-                prices_periods, start_ts, end_ts
-            ))
+                logging.info('Calling export_prices({}, {}, {})'.format(
+                    prices_periods, start_ts, end_ts
+                ))
 
-            prices_provider = CryptowatPricesProvider(api_key=prices_api_key)
-            prices_provider.create_temp_json(
-                output_path=os.path.join(tempdir, "prices.csv"),
-                periods=prices_periods,
-                start=start_ts,
-                end=end_ts
-            )
+                prices_provider = CryptowatPricesProvider(api_key=prices_api_key)
+                prices_provider.create_temp_json(
+                    output_path=os.path.join(tempdir, f"prices_{symbol}.csv"),
+                    periods=prices_periods,
+                    start=start_ts,
+                    end=end_ts
+                )
 
-            copy_to_export_path(
-                os.path.join(tempdir, "prices.csv"), export_path("prices", execution_date)
-            )
+                copy_to_export_path(
+                    os.path.join(tempdir, f"prices_{symbol}.csv"), export_path(f"prices_{symbol}", execution_date)
+                )
+
+        return export_prices
 
     def add_export_task(toggle, task_id, python_callable, dependencies=None):
         if toggle:
@@ -348,10 +351,10 @@ def build_export_dag(
         dependencies=[extract_contracts_operator],
     )
 
-    export_prices_operator = add_export_task(
-        export_prices_toggle,
-        "export_prices",
-        export_prices_command,
+    export_prices_usd_operator = add_export_task(
+        export_prices_usd_toggle,
+        "export_prices_usd",
+        export_prices_command("usd"),
     )
 
     return dag

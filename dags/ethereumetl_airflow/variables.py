@@ -55,8 +55,8 @@ def read_export_dag_vars(var_prefix, **kwargs):
             read_var('extract_token_transfers_toggle', var_prefix, False, **kwargs)),
         'export_traces_toggle': parse_bool(
             read_var('export_traces_toggle', var_prefix, False, **kwargs)),
-        'export_prices_toggle': parse_bool(
-            read_var('export_prices_toggle', var_prefix, False, **kwargs))
+        'export_prices_usd_toggle': parse_bool(
+            read_var('export_prices_usd_toggle', var_prefix, False, **kwargs))
     }
 
     return vars

@@ -20,6 +20,7 @@ class SparkSubmitSQLOperator(BaseOperator):
     @apply_defaults
     def __init__(self,
                  task,
+                 task_type,
                  operator_type,
                  sql_template_path,
                  # About Spark
@@ -54,6 +55,7 @@ class SparkSubmitSQLOperator(BaseOperator):
         )
 
         self._task = task
+        self._task_type = task_type
         self._operator_type = operator_type
         self._sql_template_path = sql_template_path
 
