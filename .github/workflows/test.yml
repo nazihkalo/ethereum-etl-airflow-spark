@@ -10,7 +10,7 @@ jobs:
     - name: Airflow DAGs Test
       uses: TalkWIthKeyboard/airflow-dags-test-action@v1.0
       with:
-        requirements-file: requirements_test.txt
+        requirements-file: ci/requirements_test.txt
         dags-path: dags
         dags-test-folder: tests/dags
-        var-file: test_var.json
+        var-file: ci/test_var.json
