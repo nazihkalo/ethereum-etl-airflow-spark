@@ -16,10 +16,6 @@ def read_export_dag_vars(var_prefix, **kwargs):
     else:
         provider_uris_archival = [uri.strip() for uri in provider_uris_archival.split(',')]
 
-    prices_periods = read_var('prices_periods', var_prefix, False, **kwargs)
-    if prices_periods is None:
-        prices_periods = 21600
-
     cloud_provider = read_var('cloud_provider', var_prefix, False, **kwargs)
     if cloud_provider is None:
         cloud_provider = 'gcp'
@@ -31,8 +27,6 @@ def read_export_dag_vars(var_prefix, **kwargs):
         'export_schedule_interval': read_var('export_schedule_interval', var_prefix, True, **kwargs),
         'provider_uris': provider_uris,
         'provider_uris_archival': provider_uris_archival,
-        'prices_api_key': read_var('prices_api_key', var_prefix, True, **kwargs),
-        'prices_periods': prices_periods,
         'notification_emails': read_var('notification_emails', None, False, **kwargs),
         'export_max_active_runs': parse_int(read_var('export_max_active_runs', var_prefix, False, **kwargs)),
         'export_max_workers': parse_int(read_var('export_max_workers', var_prefix, True, **kwargs)),

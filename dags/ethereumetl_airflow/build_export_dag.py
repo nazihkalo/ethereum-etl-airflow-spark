@@ -17,15 +17,13 @@ from ethereumetl.cli import (
     export_traces,
     extract_field,
 )
-from ethereumetl_airflow.prices_provider.cryptowat_prices_provider import CryptowatPricesProvider
+from ethereumetl_airflow.prices_provider.prices_provider import CoinpaprikaPriceProvider
 
 
 def build_export_dag(
         dag_id,
         provider_uris,
         provider_uris_archival,
-        prices_api_key,
-        prices_periods,
         output_bucket,
         cloud_provider,
         export_start_date,
@@ -274,14 +272,11 @@ def build_export_dag(
                 start_ts = int(execution_date.start_of('day').timestamp())
                 end_ts = int(execution_date.end_of('day').timestamp())
 
-                logging.info('Calling export_prices({}, {}, {})'.format(
-                    prices_periods, start_ts, end_ts
-                ))
+                logging.info('Calling export_prices({}, {})'.format(start_ts, end_ts))
 
-                prices_provider = CryptowatPricesProvider(api_key=prices_api_key)
-                prices_provider.create_temp_json(
+                prices_provider = CoinpaprikaPriceProvider()
+                prices_provider.create_temp_csv(
                     output_path=os.path.join(tempdir, f"prices_{symbol}.csv"),
-                    periods=prices_periods,
                     start=start_ts,
                     end=end_ts
                 )
