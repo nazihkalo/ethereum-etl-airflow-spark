@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS `{{database_temp}}`.`{{table}}`
 (
-    minutes          TIMESTAMP,
-    prices           DOUBLE,
+    minute           TIMESTAMP,
+    price            DOUBLE,
     decimals         BIGINT,
     contract_address STRING,
     symbol           STRING,

@@ -18,17 +18,17 @@ day_format = '%Y-%m-%d'
 
 
 class PriceRecord:
-    attrs = ['minutes', 'prices', 'decimals', 'contract_address', 'symbol', 'dt']
+    attrs = ['minute', 'price', 'decimals', 'contract_address', 'symbol', 'dt']
 
     def __init__(self,
-                 minutes: str,
-                 prices: float,
+                 minute: str,
+                 price: float,
                  decimals: int,
                  contract_address: str,
                  symbol: str,
                  dt: str) -> None:
-        self.minutes = minutes
-        self.prices = prices
+        self.minute = minute
+        self.price = price
         self.decimals = decimals
         self.contract_address = contract_address
         self.symbol = symbol
@@ -36,7 +36,7 @@ class PriceRecord:
 
     def copy_it_with_datetime(self, time: pdl.datetime) -> 'PriceRecord':
         other = copy.copy(self)
-        other.minutes = time.strftime(minutes_format)
+        other.minute = time.strftime(minutes_format)
         other.dt = time.strftime(day_format)
         return other
 
@@ -75,7 +75,7 @@ class CoinpaprikaPriceProvider(PriceProvider):
 
     @staticmethod
     def _copy_record_across_interval(record: PriceRecord, interval: int) -> List[PriceRecord]:
-        start = pdl.from_format(record.minutes, minutes_format)
+        start = pdl.from_format(record.minute, minutes_format)
         end = start.add(minutes=interval)
         records = []
 
@@ -94,8 +94,8 @@ class CoinpaprikaPriceProvider(PriceProvider):
             time = pdl.instance(datetime.strptime(item['timestamp'], iso_format))
             records += self._copy_record_across_interval(
                 record=PriceRecord(
-                    minutes=time.strftime(minutes_format),
-                    prices=item['price'],
+                    minute=time.strftime(minutes_format),
+                    price=item['price'],
                     decimals=token.decimals,
                     contract_address=token.address,
                     symbol=token.symbol,
