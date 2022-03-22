@@ -11,6 +11,11 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
+    -f|--fernet-key)
+      FERNET_KEY="$2"
+      shift # past argument
+      shift # past value
+      ;;
     -e|--eks-host)
       EKS_HOST="$2"
       shift # past argument
@@ -38,7 +43,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Check all required arguments
-if [[ -z "$NAMESPACE" || -z "$PG_URL" || -z "$EKS_HOST" || -z "$IMAGE_NAME" || -z "$IMAGE_TAG" ]];
+if [[ -z "$NAMESPACE" || -z "$PG_URL" || -z "$EKS_HOST" || -z "$IMAGE_NAME" || -z "$IMAGE_TAG" || -z "$FERNET_KEY" ]];
 then
   echo "You missed some required argument."
   exit 1
@@ -62,7 +67,8 @@ mkdir -p -- "$TEMP_DIR"
 # shellcheck disable=SC2002
 cat "$PROJECT_DIR"/helm-values.yaml | \
   sed "s={{IMAGE_REPOSITORY}}=$IMAGE_REPOSITORY=" | \
-  sed "s={{IMAGE_TAG}}=$IMAGE_TAG=" > "$HELM_VALUE_YAML"
+  sed "s={{IMAGE_TAG}}=$IMAGE_TAG=" | \
+  sed "s/{{FERNET_KEY}}/$FERNET_KEY/" > "$HELM_VALUE_YAML"
 
 # Recreate namespace and install all resources.
 kubectl delete namespace "$NAMESPACE"

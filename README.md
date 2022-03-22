@@ -6,6 +6,8 @@ The repository forks from [ethereum-etl-airflow](https://github.com/blockchain-e
 
 - namespace **[required]**: namespace scope for this request
 - pg-url **[required]**: url of the postgresql, the format should be `user:password@host:port/db`
+- fernet-key **[required]**: to encrypt passwords in the connection configuration and the variable configuration,
+  changing the key will cause decryption of existing credentials to fail
 - eks-host **[required]**: host url of the AWS EKS (the script just server for the EKS users)
 - image-name **[required]**: name of the docker image, like: airflow
 - image-tag **[required]**: version tag of the docker image, like: 1.10.15-b11

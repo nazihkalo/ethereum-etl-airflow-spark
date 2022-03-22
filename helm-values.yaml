@@ -17,6 +17,10 @@ data:
 # Flask secret key for Airflow Webserver: `[webserver] secret_key` in airflow.cfg
 webserverSecretKeySecretName: airflow-webserver-secret
 
+# Fernet key settings
+# Note: fernetKey can only be set during install, not upgrade
+fernetKey: {{FERNET_KEY}}
+
 # PgBouncer settings
 pgbouncer:
   # Enable PgBouncer
