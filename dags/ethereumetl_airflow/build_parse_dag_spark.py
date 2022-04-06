@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from glob import glob
-from typing import cast, List, Dict, TypedDict
+from typing import cast, List, Dict
 
 from airflow import models
 from airflow.hooks.S3_hook import S3Hook
@@ -10,6 +10,11 @@ from airflow.operators.sensors import ExternalTaskSensor
 from bdbt.abi.abi_type import ABI
 from ethereumetl_airflow.common import read_json_file
 from ethereumetl_airflow.operators.spark_sumbit_py_operator import SparkSubmitPyOperator
+
+try:
+    from typing import TypedDict
+except ImportError:
+    from typing_extensions import TypedDict
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
@@ -74,23 +79,23 @@ def build_parse_dag(
 
     # Create multiply parse tasks for one contract
     def create_parse_tasks(contract: ContractDefinition):
-        for element in contract.abi:
+        for element in contract['abi']:
             etype = element['type']
-            table_name = f'{contract.contract_name}_{"evt" if etype == "event" else "call"}_{element["name"]}'
-            path = f's3a://{output_bucket}/ethereumetl/enrich/{contract.dataset_name}/{table_name}'
+            table_name = f'{contract["contract_name"]}_{"evt" if etype == "event" else "call"}_{element["name"]}'
+            path = f's3a://{output_bucket}/ethereumetl/enrich/{contract["dataset_name"]}/{table_name}'
             parse_all_partition = not check_table_exists(
                 bucket=output_bucket,
-                dataset=contract.dataset_name,
+                dataset=contract['dataset_name'],
                 table=table_name
             )
             operator = SparkSubmitPyOperator(
                 **common_operator_conf,
                 table_name=table_name,
-                dataset_name=contract.dataset_name,
+                dataset_name=contract['dataset_name'],
                 render_context={
                     'type': etype,
-                    'contract_address': contract.contract_address,
-                    'abi': contract.abi,
+                    'contract_address': contract['contract_address'],
+                    'abi': contract['abi'],
                     'element_name': element['name'],
                     'path': path,
                     'parse_all_partition': parse_all_partition
