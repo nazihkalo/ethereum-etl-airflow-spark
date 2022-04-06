@@ -59,7 +59,7 @@ def build_load_dag_spark(
 
     common_operator_conf = {
         'dag': dag,
-        'conf': spark_conf,
+        'conf': spark_conf['conf'],
         'bucket': output_bucket,
         'database': dataset_name,
         'database_temp': dataset_name_temp,

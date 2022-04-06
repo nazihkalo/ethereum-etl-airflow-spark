@@ -3,6 +3,33 @@ from datetime import datetime
 from airflow.models import Variable
 
 
+def read_spark_vars(output_bucket, **kwargs):
+    spark_prefix = 'spark_'
+    return {
+        'conf': {
+            'spark.kubernetes.namespace': read_var('k8s_namespace', spark_prefix, True, **kwargs),
+            'spark.kubernetes.authenticate.driver.serviceAccountName':
+                read_var('driver_service_account_name', spark_prefix, True, **kwargs),
+            'spark.kubernetes.container.image': read_var('image', spark_prefix, True, **kwargs),
+            'spark.kubernetes.file.upload.path': 's3a://{bucket}/airflow/spark-application'.format(
+                bucket=output_bucket),
+            'spark.hive.metastore.uris': read_var('metastore_uris', spark_prefix, True, **kwargs),
+            'spark.sql.catalogImplementation': 'hive',
+            # https://stackoverflow.com/questions/50006526/overwrite-only-some-partitions-in-a-partitioned-spark-dataset
+            'spark.sql.sources.partitionOverwriteMode': 'dynamic',
+            'spark.hadoop.fs.s3a.access.key': read_var('s3a_access_key', spark_prefix, True, **kwargs),
+            'spark.hadoop.fs.s3a.impl': 'org.apache.hadoop.fs.s3a.S3AFileSystem',
+            'spark.hadoop.fs.s3a.fast.upload': True,
+            'spark.hadoop.fs.s3a.secret.key': read_var('s3a_secret_key', spark_prefix, True, **kwargs),
+            'spark.hadoop.hive.metastore.client.socket.timeout': 600,
+            'spark.executor.memory': '4g',
+            'spark.sql.warehouse.dir': read_var('warehouse_dir', spark_prefix, True, **kwargs)
+        },
+        'jars': read_var('jars', spark_prefix, True, **kwargs),
+        'py_files': read_var('py_files', spark_prefix, True, **kwargs)
+    }
+
+
 def read_export_dag_vars(var_prefix, **kwargs):
     export_start_date = read_var('export_start_date', var_prefix, True, **kwargs)
     export_start_date = datetime.strptime(export_start_date, '%Y-%m-%d')
@@ -122,30 +149,11 @@ def read_load_dag_redshift_vars(var_prefix, **kwargs):
 def read_load_dag_spark_vars(var_prefix, **kwargs):
     output_bucket = read_var('output_bucket', var_prefix, True, **kwargs)
 
-    spark_prefix = var_prefix + 'spark_'
-    spark_conf = {
-        'spark.kubernetes.namespace': read_var('k8s_namespace', spark_prefix, True, **kwargs),
-        'spark.kubernetes.authenticate.driver.serviceAccountName': read_var('driver_service_account_name', spark_prefix,
-                                                                            True, **kwargs),
-        'spark.kubernetes.container.image': read_var('image', spark_prefix, True, **kwargs),
-        'spark.kubernetes.file.upload.path': "s3a://{bucket}/airflow/spark-application".format(bucket=output_bucket),
-        'spark.hive.metastore.uris': read_var('metastore_uris', spark_prefix, True, **kwargs),
-        'spark.sql.catalogImplementation': 'hive',
-        # https://stackoverflow.com/questions/50006526/overwrite-only-some-partitions-in-a-partitioned-spark-dataset
-        "spark.sql.sources.partitionOverwriteMode": "dynamic",
-        "spark.hadoop.fs.s3a.access.key": read_var('s3a_access_key', spark_prefix, True, **kwargs),
-        "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
-        "spark.hadoop.fs.s3a.fast.upload": True,
-        "spark.hadoop.fs.s3a.secret.key": read_var('s3a_secret_key', spark_prefix, True, **kwargs),
-        "spark.hadoop.hive.metastore.client.socket.timeout": 600,
-        "spark.executor.memory": "4g"
-    }
-
     vars = {
         'output_bucket': output_bucket,
         'notification_emails': read_var('notification_emails', None, False, **kwargs),
         'schedule_interval': read_var('schedule_interval', var_prefix, True, **kwargs),
-        'spark_conf': spark_conf
+        'spark_conf': read_spark_vars(output_bucket)
     }
 
     load_start_date = read_var('load_start_date', vars, False, **kwargs)
@@ -190,7 +198,7 @@ def parse_bool(bool_string, default=True):
     if bool_string is None or len(bool_string) == 0:
         return default
     else:
-        return bool_string.lower() in ["true", "yes"]
+        return bool_string.lower() in ['true', 'yes']
 
 
 def parse_int(val):
