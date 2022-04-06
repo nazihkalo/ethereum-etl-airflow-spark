@@ -2,6 +2,9 @@ import pyspark
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 
+sc = pyspark.SparkContext()
+sc.setSystemProperty("user.name", "hadoop")
+
 spark = SparkSession.builder.getOrCreate()
 
 spark.sql("""
