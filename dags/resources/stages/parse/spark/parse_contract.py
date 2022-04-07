@@ -59,11 +59,9 @@ if len(candidates) == 0:
         .format('parquet') \
         .saveAsTable('{{database}}.{{table}}')
 else:
-    spark.sql("""
-        INSERT OVERWRITE TABLE `{{database}}`.`{{table}}`
-            PARTITION (dt = date '{{ds}}')
-        SELECT /*+ REPARTITION(1) */
-            *
-        FROM temp_dt_event_or_function
-        WHERE dt = date '{{ds}}'
-    """)
+    df.filter(F.expr("dt == date '{{ds}}'")) \
+        .repartition(1) \
+        .select(spark.table('{{database}}.{{table}}').schema.fieldNames()) \
+        .write \
+        .mode('overwrite') \
+        .insertInto('{{database}}.{{table}}')
