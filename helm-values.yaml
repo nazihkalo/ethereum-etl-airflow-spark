@@ -6,8 +6,8 @@ airflowVersion: "1.10.15"
 
 images:
   airflow:
-    repository: {{IMAGE_REPOSITORY}}
-    tag: {{IMAGE_TAG}}
+    repository: { { IMAGE_REPOSITORY } }
+    tag: { { IMAGE_TAG } }
 
 # Airflow database & redis config
 data:
@@ -19,7 +19,7 @@ webserverSecretKeySecretName: airflow-webserver-secret
 
 # Fernet key settings
 # Note: fernetKey can only be set during install, not upgrade
-fernetKey: {{FERNET_KEY}}
+fernetKey: { { FERNET_KEY } }
 
 # PgBouncer settings
 pgbouncer:
@@ -40,7 +40,7 @@ dags:
     # ssh examples ssh://git@github.com/apache/airflow.git
     # git@github.com:apache/airflow.git
     # https example: https://github.com/apache/airflow.git
-    repo: https://github.com/datawaves-xyz/ethereum-etl-airflow.git
+    repo: https://github.com/nazihkalo/ethereum-etl-airflow-spark.git
     branch: master
     # subpath within the repo where dags are located
     # should be "" if dags are at repo root
